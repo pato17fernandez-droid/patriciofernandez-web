@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Usuarios - GuardControl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">Guard<span>Control</span></div>
+    <div class="subtitle">Control inteligente de rondas</div>
+
+    <nav class="menu">
+      <a href="/guardcontrol/">Dashboard</a>
+      <a class="active" href="/guardcontrol/usuarios.html">Usuarios</a>
+      <a href="#">Empresas</a>
+      <a href="#">Instalaciones</a>
+      <a href="#">Puntos QR</a>
+      <a href="#">Reportes</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <div class="topbar">
+      <h1>Usuarios</h1>
+      <div class="user">Administrador</div>
+    </div>
+
+    <section class="panel">
+      <h2>Usuarios registrados</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Usuario</th>
+            <th>Rol</th>
+          </tr>
+        </thead>
+        <tbody id="tablaUsuarios">
+          <tr><td colspan="4">Cargando usuarios...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="js/usuarios.js"></script>
+</body>
+</html>
