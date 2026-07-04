@@ -2,73 +2,98 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Supervisor - GuardControl</title>
+  <title>GuardControl - Supervisor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial; background:#111; color:white; padding:20px; }
-    h1 { margin-bottom:5px; }
-    .card { background:#1e1e1e; padding:20px; border-radius:12px; margin-top:20px; }
+    body { font-family: Arial; background:#0f1115; color:white; margin:0; }
+    header { background:#171a21; padding:20px; border-bottom:1px solid #2a2f3a; }
+    h1 { margin:0; }
+    .sub { color:#aaa; margin-top:5px; }
+    main { padding:20px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:15px; }
+    .card { background:#171a21; padding:20px; border-radius:14px; border:1px solid #2a2f3a; }
+    .num { font-size:34px; font-weight:bold; color:#00b894; }
     table { width:100%; border-collapse:collapse; margin-top:15px; }
-    th, td { padding:12px; border-bottom:1px solid #333; text-align:left; }
+    th, td { padding:12px; border-bottom:1px solid #2a2f3a; text-align:left; }
     th { color:#00b894; }
     a { color:#74b9ff; }
     .ok { color:#00b894; font-weight:bold; }
+    .danger { color:#ff7675; font-weight:bold; }
   </style>
 </head>
 <body>
 
-<h1>GuardControl</h1>
-<p>Panel Supervisor - Últimas marcas</p>
+<header>
+  <h1>GuardControl</h1>
+  <div class="sub">Panel Supervisor - Control de Rondas</div>
+</header>
 
-<div class="card">
-  <h2>Registros recientes</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Guardia</th>
-        <th>Punto</th>
-        <th>Fecha</th>
-        <th>GPS</th>
-      </tr>
-    </thead>
-    <tbody id="tabla">
-      <tr><td colspan="5">Cargando...</td></tr>
-    </tbody>
-  </table>
-</div>
+<main>
+  <div class="grid">
+    <div class="card">
+      <div>Total registros</div>
+      <div class="num" id="total">0</div>
+    </div>
+    <div class="card">
+      <div>Último guardia</div>
+      <div class="num" id="ultimoGuardia">-</div>
+    </div>
+    <div class="card">
+      <div>Último punto</div>
+      <div class="num" id="ultimoPunto">-</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h2>Registros recientes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Guardia</th>
+          <th>Punto</th>
+          <th>Fecha</th>
+          <th>GPS</th>
+        </tr>
+      </thead>
+      <tbody id="tabla">
+        <tr><td colspan="5">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
 
 <script>
 async function cargarMarcas() {
-  try {
-    const res = await fetch("/api/marcas");
-    const datos = await res.json();
+  const res = await fetch("/api/marcas");
+  const datos = await res.json();
 
-    const tabla = document.getElementById("tabla");
+  document.getElementById("total").innerText = datos.length;
 
-    if (!datos.length) {
-      tabla.innerHTML = `<tr><td colspan="5">No hay registros todavía</td></tr>`;
-      return;
-    }
-
-    tabla.innerHTML = datos.map(m => {
-      const mapa = `https://www.google.com/maps?q=${m.latitud},${m.longitud}`;
-
-      return `
-        <tr>
-          <td>${m.id}</td>
-          <td>${m.guardia}</td>
-          <td><span class="ok">${m.punto}</span></td>
-          <td>${m.fecha}</td>
-          <td><a href="${mapa}" target="_blank">Ver mapa</a></td>
-        </tr>
-      `;
-    }).join("");
-
-  } catch (error) {
-    document.getElementById("tabla").innerHTML =
-      `<tr><td colspan="5">Error al cargar datos</td></tr>`;
+  if (datos.length > 0) {
+    document.getElementById("ultimoGuardia").innerText = datos[0].guardia;
+    document.getElementById("ultimoPunto").innerText = datos[0].punto;
   }
+
+  const tabla = document.getElementById("tabla");
+
+  if (!datos.length) {
+    tabla.innerHTML = `<tr><td colspan="5">No hay registros todavía</td></tr>`;
+    return;
+  }
+
+  tabla.innerHTML = datos.map(m => {
+    const mapa = `https://www.google.com/maps?q=${m.latitud},${m.longitud}`;
+    return `
+      <tr>
+        <td>${m.id}</td>
+        <td>${m.guardia}</td>
+        <td><span class="ok">${m.punto}</span></td>
+        <td>${m.fecha}</td>
+        <td><a href="${mapa}" target="_blank">Ver mapa</a></td>
+      </tr>
+    `;
+  }).join("");
 }
 
 cargarMarcas();
