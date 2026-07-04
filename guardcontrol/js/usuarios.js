@@ -53,7 +53,7 @@ async function crearUsuario() {
     document.getElementById("password").value = "";
     cargarUsuarios();
   } else {
-    alert("Error: " + resultado.error);
+    alert("Error al guardar: " + JSON.stringify(resultado));
   }
 }
 
