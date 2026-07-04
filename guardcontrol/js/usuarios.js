@@ -45,7 +45,7 @@ async function crearUsuario() {
   });
 
   const resultado = await respuesta.json();
-
+  alert("Respuesta servidor: " + JSON.stringify(resultado));
   if (resultado.ok) {
     alert("Usuario creado correctamente");
     document.getElementById("nombre").value = "";
