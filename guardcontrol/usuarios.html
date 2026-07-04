@@ -31,7 +31,19 @@
 
     <section class="panel">
       <h2>Usuarios registrados</h2>
+      <h2>Nuevo usuario</h2>
 
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:25px;">
+  <input id="nombre" placeholder="Nombre completo">
+  <input id="usuario" placeholder="Usuario">
+  <input id="password" placeholder="Contraseña">
+  <select id="rol">
+    <option value="Administrador">Administrador</option>
+    <option value="Supervisor">Supervisor</option>
+    <option value="Guardia">Guardia</option>
+  </select>
+  <button onclick="crearUsuario()">Guardar usuario</button>
+</div>
       <table>
         <thead>
           <tr>

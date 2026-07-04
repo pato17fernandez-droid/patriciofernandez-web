@@ -141,3 +141,20 @@ a {
     padding: 18px;
   }
 }
+input, select, button {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #252b38;
+  background: #0f1115;
+  color: white;
+}
+
+button {
+  background: #00b894;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  opacity: 0.9;
+}

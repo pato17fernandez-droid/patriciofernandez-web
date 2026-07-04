@@ -25,4 +25,36 @@ async function cargarUsuarios() {
   }
 }
 
+async function crearUsuario() {
+  const datos = {
+    nombre: document.getElementById("nombre").value.trim(),
+    usuario: document.getElementById("usuario").value.trim(),
+    password: document.getElementById("password").value.trim(),
+    rol: document.getElementById("rol").value
+  };
+
+  if (!datos.nombre || !datos.usuario || !datos.password || !datos.rol) {
+    alert("Completa todos los campos");
+    return;
+  }
+
+  const respuesta = await fetch("/api/usuarios", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos)
+  });
+
+  const resultado = await respuesta.json();
+
+  if (resultado.ok) {
+    alert("Usuario creado correctamente");
+    document.getElementById("nombre").value = "";
+    document.getElementById("usuario").value = "";
+    document.getElementById("password").value = "";
+    cargarUsuarios();
+  } else {
+    alert("Error: " + resultado.error);
+  }
+}
+
 cargarUsuarios();
