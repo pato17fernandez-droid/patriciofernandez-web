@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>GuardControl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/guardcontrol/css/style.css">
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">Guard<span>Control</span></div>
+    <div class="subtitle">Control inteligente de rondas</div>
+
+    <nav class="menu">
+      <a class="active" href="/guardcontrol/">Dashboard</a>
+      <a href="#">Guardias</a>
+      <a href="#">Empresas</a>
+      <a href="#">Instalaciones</a>
+      <a href="#">Puntos QR</a>
+      <a href="#">Reportes</a>
+      <a href="/rondas/">Demo antigua</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <div class="topbar">
+      <h1>Dashboard</h1>
+      <div class="user">Patricio Fernández</div>
+    </div>
+
+    <section class="cards">
+      <div class="card">
+        <div class="card-title">Total registros</div>
+        <div class="card-number" id="totalRegistros">0</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Último guardia</div>
+        <div class="card-number" id="ultimoGuardia">-</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Último punto</div>
+        <div class="card-number" id="ultimoPunto">-</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Estado sistema</div>
+        <div class="card-number">Online</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Últimos movimientos</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Guardia</th>
+            <th>Punto</th>
+            <th>Fecha</th>
+            <th>GPS</th>
+          </tr>
+        </thead>
+        <tbody id="tabla">
+          <tr>
+            <td colspan="5">Cargando registros...</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="/guardcontrol/js/admin.js"></script>
+</body>
+</html>
