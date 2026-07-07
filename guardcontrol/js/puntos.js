@@ -38,7 +38,7 @@ async function cargarPuntos() {
           <td>${p.nombre}</td>
           <td>${p.codigo_qr}</td>
           <td>
-            <a href="${qrImg}" target="_blank">Ver QR</a>
+            <a href="/guardcontrol/qr.html?empresa=${encodeURIComponent(p.empresa || "-")}&instalacion=${encodeURIComponent(p.instalacion || "-")}&punto=${encodeURIComponent(p.nombre)}&codigo=${encodeURIComponent(p.codigo_qr)}" target="_blank">Imprimir QR</a>
           </td>
           <td>${p.estado}</td>
         </tr>

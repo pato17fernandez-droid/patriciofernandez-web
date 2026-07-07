@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Punto - GuardControl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .qr-card {
+      max-width: 420px;
+      margin: 30px auto;
+      background: white;
+      color: #111;
+      padding: 30px;
+      border-radius: 18px;
+      text-align: center;
+    }
+
+    .qr-card h1 {
+      margin: 0;
+      color: #111;
+    }
+
+    .qr-card .brand {
+      color: #00b894;
+      font-weight: bold;
+    }
+
+    .qr-img {
+      margin: 25px 0;
+    }
+
+    .qr-img img {
+      width: 260px;
+      height: 260px;
+    }
+
+    .qr-info {
+      font-size: 16px;
+      margin: 8px 0;
+    }
+
+    .print-btn {
+      display: block;
+      max-width: 420px;
+      margin: 20px auto;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .print-btn {
+        display: none;
+      }
+
+      .sidebar,
+      .topbar {
+        display: none;
+      }
+
+      .qr-card {
+        box-shadow: none;
+        border: 2px solid #111;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">Imprimir QR</button>
+
+<div class="qr-card">
+  <h1>Guard<span class="brand">Control</span></h1>
+  <p>Sistema de Control de Rondas</p>
+
+  <div class="qr-info"><strong>Empresa:</strong> <span id="empresa">-</span></div>
+  <div class="qr-info"><strong>Instalación:</strong> <span id="instalacion">-</span></div>
+  <div class="qr-info"><strong>Punto:</strong> <span id="punto">-</span></div>
+
+  <div class="qr-img">
+    <img id="qr" src="">
+  </div>
+
+  <div class="qr-info"><strong>Código:</strong> <span id="codigo">-</span></div>
+</div>
+
+<script src="js/qr.js"></script>
+</body>
+</html>
