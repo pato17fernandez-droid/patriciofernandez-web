@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Instalaciones - GuardControl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">Guard<span>Control</span></div>
+    <div class="subtitle">Control inteligente de rondas</div>
+    <nav class="menu">
+      <a href="/guardcontrol/">Dashboard</a>
+      <a href="/guardcontrol/usuarios.html">Usuarios</a>
+      <a href="/guardcontrol/empresas.html">Empresas</a>
+      <a class="active" href="/guardcontrol/instalaciones.html">Instalaciones</a>
+      <a href="#">Puntos QR</a>
+      <a href="#">Reportes</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <div class="topbar">
+      <h1>Instalaciones</h1>
+      <div class="user">Administrador</div>
+    </div>
+
+    <section class="panel">
+      <h2>Nueva instalación</h2>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:25px;">
+        <select id="empresa_id"></select>
+        <input id="nombre" placeholder="Nombre instalación">
+        <input id="direccion" placeholder="Dirección">
+        <input id="latitud" placeholder="Latitud opcional">
+        <input id="longitud" placeholder="Longitud opcional">
+        <button onclick="crearInstalacion()">Guardar instalación</button>
+      </div>
+
+      <h2>Instalaciones registradas</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Empresa</th>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tablaInstalaciones">
+          <tr><td colspan="5">Cargando instalaciones...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="js/instalaciones.js"></script>
+</body>
+</html>
