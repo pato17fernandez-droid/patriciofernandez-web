@@ -13,14 +13,7 @@
     <div class="logo">Guard<span>Control</span></div>
     <div class="subtitle">Control inteligente de rondas</div>
 
-    <nav class="menu">
-  <a href="/guardcontrol/">Dashboard</a>
-  <a href="/guardcontrol/usuarios.html">Usuarios</a>
-  <a class="active" href="/guardcontrol/empresas.html">Empresas</a>
-  <a href="/guardcontrol/instalaciones.html">Instalaciones</a>
-  <a href="/guardcontrol/puntos.html">Puntos QR</a>
-  <a href="/guardcontrol/reportes.html">Reportes</a>
-  </nav>
+    <nav class="menu" id="menu"></nav>
   </aside>
 
   <main class="content">
@@ -65,8 +58,10 @@
 </div>
 
 <script src="js/auth.js"></script>
+<script src="js/menu.js"></script>
 <script>
   protegerPagina(["Administrador"]);
+  cargarMenu("empresas");
 </script>
 <script src="js/empresas.js"></script>
 </body>
