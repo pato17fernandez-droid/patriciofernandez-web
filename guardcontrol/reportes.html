@@ -12,7 +12,6 @@
   <aside class="sidebar">
     <div class="logo">Guard<span>Control</span></div>
     <div class="subtitle">Control inteligente de rondas</div>
-
     <nav class="menu" id="menu"></nav>
   </aside>
 
@@ -25,7 +24,33 @@
       </div>
     </div>
 
+    <section class="cards">
+      <div class="card">
+        <div class="card-title">Rondas mostradas</div>
+        <div class="card-number" id="totalRondas">0</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Última ronda</div>
+        <div class="card-number" id="ultimaRonda">-</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Última actualización</div>
+        <div class="card-number" id="ultimaActualizacion">-</div>
+      </div>
+    </section>
+
     <section class="panel">
+      <h2>Filtros</h2>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:25px;">
+        <input id="filtroTexto" placeholder="Buscar guardia, empresa, instalación o punto">
+        <input id="filtroFecha" type="date">
+        <button onclick="aplicarFiltros()">Aplicar filtros</button>
+        <button onclick="limpiarFiltros()">Limpiar filtros</button>
+      </div>
+
       <h2>Últimas rondas registradas</h2>
 
       <table>
@@ -51,9 +76,10 @@
 <script src="js/auth.js"></script>
 <script src="js/menu.js"></script>
 <script>
-  protegerPagina(["Administrador"]);
+  protegerPagina(["Administrador", "Supervisor"]);
   cargarMenu("reportes");
 </script>
 <script src="js/reportes.js"></script>
+
 </body>
 </html>
