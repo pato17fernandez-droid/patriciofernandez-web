@@ -31,6 +31,7 @@
 
 <script src="js/auth.js"></script>
 <script>
+  protegerPagina(["Guardia"]);
   const user = obtenerUsuario();
   document.getElementById("nombreGuardia").innerText = user.nombre + " (" + user.rol + ")";
 </script>

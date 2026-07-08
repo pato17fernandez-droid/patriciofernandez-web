@@ -2,7 +2,7 @@ function obtenerUsuario() {
   const data = localStorage.getItem("guardcontrol_user");
 
   if (!data) {
-    location.href = "/guardcontrol/login.html";
+    window.location.href = "/guardcontrol/login.html";
     return null;
   }
 
@@ -10,14 +10,28 @@ function obtenerUsuario() {
     return JSON.parse(data);
   } catch {
     localStorage.removeItem("guardcontrol_user");
-    location.href = "/guardcontrol/login.html";
+    window.location.href = "/guardcontrol/login.html";
     return null;
   }
 }
 
-function mostrarUsuario() {
+function protegerPagina(rolesPermitidos) {
   const user = obtenerUsuario();
   if (!user) return;
+
+  if (!rolesPermitidos.includes(user.rol)) {
+    alert("Acceso denegado para tu rol: " + user.rol);
+
+    if (user.rol === "Guardia") {
+      window.location.href = "/guardcontrol/guardia.html";
+    } else if (user.rol === "Supervisor") {
+      window.location.href = "/guardcontrol/reportes.html";
+    } else {
+      window.location.href = "/guardcontrol/";
+    }
+
+    return;
+  }
 
   document.querySelectorAll(".user").forEach(el => {
     el.innerText = `${user.nombre} (${user.rol})`;
@@ -26,7 +40,5 @@ function mostrarUsuario() {
 
 function cerrarSesion() {
   localStorage.removeItem("guardcontrol_user");
-  location.href = "/guardcontrol/login.html";
+  window.location.href = "/guardcontrol/login.html";
 }
-
-mostrarUsuario();
