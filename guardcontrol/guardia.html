@@ -125,19 +125,17 @@ Cerrar sesión
 
 <script>
 
+<script>
 protegerPagina(["Guardia"]);
 
-const usuario=obtenerUsuario();
+const usuario = obtenerUsuario();
 
-document.getElementById("nombreGuardia").innerHTML=
-usuario.nombre+"<br><small>"+usuario.rol+"</small>";
+document.getElementById("nombreGuardia").innerHTML =
+  usuario.nombre + "<br><small>" + usuario.rol + "</small>";
 
-function abrirEscaneo(){
-
-alert("En la siguiente etapa aquí se abrirá el lector QR de la cámara del teléfono.");
-
+function abrirEscaneo() {
+  alert("Para registrar una ronda, abre la cámara del celular y escanea el QR físico pegado en el punto de control. El QR abrirá automáticamente la pantalla de marcaje.");
 }
-
 </script>
 
 </body>
