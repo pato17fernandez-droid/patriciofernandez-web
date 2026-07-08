@@ -1,39 +1,143 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Guardia - GuardControl</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Guardia - GuardControl</title>
+
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+
+body{
+    margin:0;
+    background:#10131a;
+    font-family:Arial,Helvetica,sans-serif;
+    color:white;
+}
+
+.contenedor{
+    max-width:500px;
+    margin:auto;
+    padding:25px;
+}
+
+.logo{
+    text-align:center;
+    font-size:32px;
+    font-weight:bold;
+    margin-top:20px;
+}
+
+.logo span{
+    color:#00d084;
+}
+
+.tarjeta{
+    background:#1a1f29;
+    border-radius:18px;
+    padding:25px;
+    margin-top:25px;
+    text-align:center;
+}
+
+.tarjeta h2{
+    margin-top:0;
+}
+
+.info{
+    margin-top:10px;
+    color:#cfd4dc;
+}
+
+button{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:12px;
+    font-size:18px;
+    cursor:pointer;
+    margin-top:18px;
+}
+
+.btnQR{
+    background:#00b894;
+    color:white;
+}
+
+.btnHistorial{
+    background:#2d3436;
+    color:white;
+}
+
+.btnSalir{
+    background:#d63031;
+    color:white;
+}
+
+.estado{
+    margin-top:20px;
+    color:#8be9a8;
+}
+
+</style>
+
 </head>
 <body>
 
-<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;">
-  <div class="panel" style="max-width:480px; width:100%;">
-    <h1>Guard<span style="color:#00b894;">Control</span></h1>
-    <p>Panel del Guardia</p>
+<div class="contenedor">
 
-    <h2 id="nombreGuardia">Cargando...</h2>
+<div class="logo">
+Guard<span>Control</span>
+</div>
 
-    <button onclick="location.href='/guardcontrol/puntos.html'">
-      Ver puntos QR
-    </button>
+<div class="tarjeta">
 
-    <button onclick="cerrarSesion()" style="margin-top:12px; background:#d63031;">
-      Cerrar sesión
-    </button>
+<h2 id="nombreGuardia">
+Cargando...
+</h2>
 
-    <p style="color:#9ca3af; margin-top:20px;">
-      Para registrar una ronda, escanea un QR impreso desde el módulo Puntos QR.
-    </p>
-  </div>
+<div class="info">
+Bienvenido.
+</div>
+
+<div class="estado">
+Esperando próxima ronda...
+</div>
+
+<button class="btnQR" onclick="abrirEscaneo()">
+📷 Escanear código QR
+</button>
+
+<button class="btnHistorial" onclick="location.href='/guardcontrol/mis-rondas.html'">
+📋 Mis rondas
+</button>
+
+<button class="btnSalir" onclick="cerrarSesion()">
+Cerrar sesión
+</button>
+
+</div>
+
 </div>
 
 <script src="js/auth.js"></script>
+
 <script>
-  protegerPagina(["Guardia"]);
-  const user = obtenerUsuario();
-  document.getElementById("nombreGuardia").innerText = user.nombre + " (" + user.rol + ")";
+
+protegerPagina(["Guardia"]);
+
+const usuario=obtenerUsuario();
+
+document.getElementById("nombreGuardia").innerHTML=
+usuario.nombre+"<br><small>"+usuario.rol+"</small>";
+
+function abrirEscaneo(){
+
+alert("En la siguiente etapa aquí se abrirá el lector QR de la cámara del teléfono.");
+
+}
+
 </script>
 
 </body>

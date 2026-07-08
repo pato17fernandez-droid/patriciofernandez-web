@@ -5,59 +5,124 @@
   <title>Registrar Ronda - GuardControl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/style.css">
+
   <style>
     body {
+      margin:0;
+      background:#10131a;
+      color:white;
+      font-family:Arial, sans-serif;
+      min-height:100vh;
       display:flex;
       align-items:center;
       justify-content:center;
-      min-height:100vh;
       padding:20px;
     }
 
-    .mark-box {
+    .box {
       width:100%;
-      max-width:480px;
+      max-width:520px;
       background:#151923;
       border:1px solid #252b38;
-      border-radius:18px;
+      border-radius:20px;
       padding:28px;
       text-align:center;
     }
 
-    .mark-box h1 {
-      margin-top:0;
-    }
-
-    .info {
-      margin:12px 0;
-      color:#d1d5db;
-    }
-
-    .big {
-      font-size:22px;
+    .logo {
+      font-size:32px;
       font-weight:bold;
+      margin-bottom:8px;
+    }
+
+    .logo span {
       color:#00b894;
+    }
+
+    .dato {
+      background:#0f1115;
+      padding:14px;
+      border-radius:12px;
+      margin-top:12px;
+      text-align:left;
+    }
+
+    .dato small {
+      color:#9ca3af;
+    }
+
+    .dato div {
+      font-size:18px;
+      margin-top:5px;
+      color:white;
+    }
+
+    .ok {
+      color:#00b894;
+      font-weight:bold;
+      margin-top:18px;
+    }
+
+    .error {
+      color:#ff7675;
+      font-weight:bold;
+      margin-top:18px;
     }
 
     button {
       width:100%;
-      margin-top:18px;
+      margin-top:20px;
+      padding:16px;
+      font-size:18px;
+      border-radius:12px;
+      border:0;
+      background:#00b894;
+      color:white;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
+    button:disabled {
+      opacity:0.5;
+      cursor:not-allowed;
     }
   </style>
 </head>
+
 <body>
 
-<div class="mark-box">
-  <h1>Guard<span style="color:#00b894;">Control</span></h1>
+<div class="box">
+  <div class="logo">Guard<span>Control</span></div>
   <p>Registro de ronda</p>
 
-  <div class="info">Guardia:</div>
-  <div class="big" id="guardia">Cargando...</div>
+  <div class="dato">
+    <small>Guardia</small>
+    <div id="guardia">Cargando...</div>
+  </div>
 
-  <div class="info">Código QR:</div>
-  <div class="big" id="codigo">-</div>
+  <div class="dato">
+    <small>Empresa</small>
+    <div id="empresa">Cargando...</div>
+  </div>
 
-  <button onclick="registrarRonda()">Registrar ronda</button>
+  <div class="dato">
+    <small>Instalación</small>
+    <div id="instalacion">Cargando...</div>
+  </div>
+
+  <div class="dato">
+    <small>Punto de control</small>
+    <div id="punto">Cargando...</div>
+  </div>
+
+  <div class="dato">
+    <small>Código QR</small>
+    <div id="codigo">-</div>
+  </div>
+
+  <button id="btnRegistrar" onclick="registrarRonda()" disabled>
+    Registrar ronda
+  </button>
 
   <p id="estado"></p>
 </div>
@@ -67,5 +132,6 @@
   protegerPagina(["Guardia"]);
 </script>
 <script src="js/marcar.js"></script>
+
 </body>
 </html>
