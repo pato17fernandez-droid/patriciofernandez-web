@@ -125,10 +125,9 @@ Cerrar sesión
 
 <script>
 
-<script>
 protegerPagina(["Guardia"]);
 
-const usuario = obtenerUsuario();
+const usuario=obtenerUsuario();
 
 document.getElementById("nombreGuardia").innerHTML =
   usuario.nombre + "<br><small>" + usuario.rol + "</small>";

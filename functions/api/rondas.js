@@ -1,3 +1,22 @@
+async function enviarTelegram(env, mensaje) {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    return;
+  }
+
+  const url = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+  await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      chat_id: env.TELEGRAM_CHAT_ID,
+      text: mensaje
+    })
+  });
+}
+
 export async function onRequestGet(context) {
   try {
     const { results } = await context.env.DB.prepare(`
@@ -55,6 +74,21 @@ export async function onRequestPost(context) {
       latitud || null,
       longitud || null
     ).run();
+
+    const mapa = `https://www.google.com/maps?q=${latitud},${longitud}`;
+
+    const mensaje = `✅ NUEVA RONDA REGISTRADA
+
+👮 Guardia: ${guardia}
+🏢 Empresa: ${punto.empresa || "-"}
+📍 Instalación: ${punto.instalacion || "-"}
+📌 Punto: ${punto.nombre}
+🔑 QR: ${punto.codigo_qr}
+
+🌎 GPS: ${latitud}, ${longitud}
+🗺️ Mapa: ${mapa}`;
+
+    await enviarTelegram(context.env, mensaje);
 
     return Response.json({ ok: true, punto });
 
