@@ -2,6 +2,12 @@ function obtenerUsuario() {
   const data = localStorage.getItem("guardcontrol_user");
 
   if (!data) {
+    const actual = window.location.pathname + window.location.search;
+
+    if (!actual.includes("login.html")) {
+      localStorage.setItem("guardcontrol_redirect_after_login", actual);
+    }
+
     window.location.href = "/guardcontrol/login.html";
     return null;
   }
@@ -40,5 +46,6 @@ function protegerPagina(rolesPermitidos) {
 
 function cerrarSesion() {
   localStorage.removeItem("guardcontrol_user");
+  localStorage.removeItem("guardcontrol_redirect_after_login");
   window.location.href = "/guardcontrol/login.html";
 }

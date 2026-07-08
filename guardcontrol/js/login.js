@@ -24,10 +24,18 @@ async function login() {
 
   localStorage.setItem("guardcontrol_user", JSON.stringify(resultado.user));
 
+  const destinoPendiente = localStorage.getItem("guardcontrol_redirect_after_login");
+
+  if (destinoPendiente) {
+    localStorage.removeItem("guardcontrol_redirect_after_login");
+    location.href = destinoPendiente;
+    return;
+  }
+
   if (resultado.user.rol === "Guardia") {
     location.href = "/guardcontrol/guardia.html";
   } else if (resultado.user.rol === "Supervisor") {
-    location.href = "/guardcontrol/supervisor.html";
+    location.href = "/guardcontrol/reportes.html";
   } else {
     location.href = "/guardcontrol/";
   }
