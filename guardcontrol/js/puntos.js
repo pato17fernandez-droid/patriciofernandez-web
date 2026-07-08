@@ -4,6 +4,11 @@ async function cargarInstalacionesSelect() {
 
   const select = document.getElementById("instalacion_id");
 
+  if (!instalaciones.length) {
+    select.innerHTML = `<option value="">Primero crea una instalación</option>`;
+    return;
+  }
+
   select.innerHTML = instalaciones.map(i => `
     <option value="${i.id}">${i.empresa || "Sin empresa"} - ${i.nombre}</option>
   `).join("");
