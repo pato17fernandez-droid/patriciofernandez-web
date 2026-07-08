@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mis Rondas - GuardControl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div style="max-width:700px; margin:auto; padding:20px;">
+  <div class="panel">
+    <h1>Mis rondas</h1>
+    <p id="guardia">Cargando...</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Punto</th>
+          <th>Instalación</th>
+          <th>Fecha</th>
+          <th>GPS</th>
+        </tr>
+      </thead>
+      <tbody id="tablaMisRondas">
+        <tr><td colspan="4">Cargando...</td></tr>
+      </tbody>
+    </table>
+
+    <button onclick="location.href='/guardcontrol/guardia.html'">
+      Volver
+    </button>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  protegerPagina(["Guardia"]);
+</script>
+<script src="js/mis-rondas.js"></script>
+
+</body>
+</html>
