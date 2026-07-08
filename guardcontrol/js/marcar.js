@@ -11,34 +11,36 @@ document.getElementById("codigo").innerText = codigoQR || "Sin código";
 async function cargarDatosPunto() {
   if (!codigoQR) {
     document.getElementById("estado").innerHTML =
-      `<span class="error">QR inválido: falta código del punto.</span>`;
+      `<span class="error">QR inválido: falta código.</span>`;
     return;
   }
 
   try {
-    const respuesta = await fetch("/api/puntos");
-    const puntos = await respuesta.json();
+    const respuesta = await fetch("/api/punto?codigo=" + encodeURIComponent(codigoQR));
+    const resultado = await respuesta.json();
 
-    puntoEncontrado = puntos.find(p => p.codigo_qr === codigoQR);
-
-    if (!puntoEncontrado) {
+    if (!resultado.ok) {
       document.getElementById("empresa").innerText = "-";
       document.getElementById("instalacion").innerText = "-";
       document.getElementById("punto").innerText = "-";
       document.getElementById("estado").innerHTML =
-        `<span class="error">QR no registrado en el sistema.</span>`;
+        `<span class="error">${resultado.error}</span>`;
       return;
     }
+
+    puntoEncontrado = resultado.punto;
 
     document.getElementById("empresa").innerText = puntoEncontrado.empresa || "-";
     document.getElementById("instalacion").innerText = puntoEncontrado.instalacion || "-";
     document.getElementById("punto").innerText = puntoEncontrado.nombre || "-";
 
     document.getElementById("btnRegistrar").disabled = false;
+    document.getElementById("estado").innerHTML =
+      `<span class="ok">QR válido. Listo para registrar.</span>`;
 
   } catch (error) {
     document.getElementById("estado").innerHTML =
-      `<span class="error">Error cargando datos del punto.</span>`;
+      `<span class="error">Error cargando punto.</span>`;
   }
 }
 
@@ -71,10 +73,11 @@ async function registrarRonda() {
     if (resultado.ok) {
       document.getElementById("estado").innerHTML =
         `<span class="ok">✅ Ronda registrada correctamente</span><br><br>
-         Guardia: ${user.nombre}<br>
-         Punto: ${resultado.punto.nombre}<br>
-         Instalación: ${resultado.punto.instalacion}<br>
-         Empresa: ${resultado.punto.empresa}`;
+        Guardia: ${user.nombre}<br>
+        Punto: ${resultado.punto.nombre}<br>
+        Instalación: ${resultado.punto.instalacion}<br>
+        Empresa: ${resultado.punto.empresa}<br>
+        GPS: ${pos.coords.latitude}, ${pos.coords.longitude}`;
     } else {
       document.getElementById("estado").innerHTML =
         `<span class="error">Error: ${resultado.error}</span>`;
