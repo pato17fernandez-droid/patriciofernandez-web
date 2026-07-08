@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Guardia - GuardControl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;">
+  <div class="panel" style="max-width:480px; width:100%;">
+    <h1>Guard<span style="color:#00b894;">Control</span></h1>
+    <p>Panel del Guardia</p>
+
+    <h2 id="nombreGuardia">Cargando...</h2>
+
+    <button onclick="location.href='/guardcontrol/puntos.html'">
+      Ver puntos QR
+    </button>
+
+    <button onclick="cerrarSesion()" style="margin-top:12px; background:#d63031;">
+      Cerrar sesión
+    </button>
+
+    <p style="color:#9ca3af; margin-top:20px;">
+      Para registrar una ronda, escanea un QR impreso desde el módulo Puntos QR.
+    </p>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  const user = obtenerUsuario();
+  document.getElementById("nombreGuardia").innerText = user.nombre + " (" + user.rol + ")";
+</script>
+
+</body>
+</html>
