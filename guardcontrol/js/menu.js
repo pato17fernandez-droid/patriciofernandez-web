@@ -1,83 +1,54 @@
 function cargarMenu(paginaActiva) {
+  const contenedor = document.getElementById("menu");
 
-const menu=document.getElementById("menu");
+  if (!contenedor) {
+    return;
+  }
 
-menu.innerHTML=`
+  const enlaces = [
+    { id: "dashboard", texto: "Centro de Operaciones", icono: "🏠", url: "/guardcontrol/" },
+    { id: "usuarios", texto: "Usuarios", icono: "👥", url: "/guardcontrol/usuarios.html" },
+    { id: "empresas", texto: "Empresas", icono: "🏢", url: "/guardcontrol/empresas.html" },
+    { id: "instalaciones", texto: "Instalaciones", icono: "📍", url: "/guardcontrol/instalaciones.html" },
+    { id: "puntos", texto: "Puntos QR", icono: "🔳", url: "/guardcontrol/puntos.html" },
+    { id: "reportes", texto: "Reportes", icono: "📊", url: "/guardcontrol/reportes.html" },
+    { id: "herramientas", texto: "Herramientas", icono: "🛠️", url: "/guardcontrol/herramientas.html" }
+  ];
 
-<div class="logo">
+  const enlacesHtml = enlaces.map((enlace) => {
+    const claseActiva = paginaActiva === enlace.id ? "active" : "";
+    return `<a class="${claseActiva}" href="${enlace.url}"><span class="menu-icon" aria-hidden="true">${enlace.icono}</span><span>${enlace.texto}</span></a>`;
+  }).join("");
 
-🛡 Guard<span>Control</span>
+  contenedor.innerHTML = `
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">🛡️</div>
+      <div>
+        <div class="logo">Guard<span>Control</span></div>
+        <div class="subtitle">Control inteligente de rondas</div>
+      </div>
+    </div>
 
-</div>
+    <nav class="menu" aria-label="Menú principal">${enlacesHtml}</nav>
 
-<div class="subtitle">
+    <div class="sidebar-footer">
+      <div class="sidebar-version">GuardControl v2.0</div>
+      <button class="logout-button" id="btnCerrarSesion" type="button"><span aria-hidden="true">🚪</span><span>Cerrar sesión</span></button>
+    </div>
+  `;
 
-Sistema de Control de Rondas
+  const botonCerrarSesion = document.getElementById("btnCerrarSesion");
 
-</div>
+  if (botonCerrarSesion) {
+    botonCerrarSesion.addEventListener("click", () => {
+      if (typeof cerrarSesion === "function") {
+        cerrarSesion();
+        return;
+      }
 
-<nav class="menu">
-
-<a ${paginaActiva==="dashboard"?'class="active"':""}
-href="/guardcontrol/">
-
-🏠 Centro de Operaciones
-
-</a>
-
-<a ${paginaActiva==="usuarios"?'class="active"':""}
-href="/guardcontrol/usuarios.html">
-
-👥 Usuarios
-
-</a>
-
-<a ${paginaActiva==="empresas"?'class="active"':""}
-href="/guardcontrol/empresas.html">
-
-🏢 Empresas
-
-</a>
-
-<a ${paginaActiva==="instalaciones"?'class="active"':""}
-href="/guardcontrol/instalaciones.html">
-
-📍 Instalaciones
-
-</a>
-
-<a ${paginaActiva==="puntos"?'class="active"':""}
-href="/guardcontrol/puntos.html">
-
-📌 Puntos QR
-
-</a>
-
-<a ${paginaActiva==="reportes"?'class="active"':""}
-href="/guardcontrol/reportes.html">
-
-📊 Reportes
-
-</a>
-
-<a ${paginaActiva==="herramientas"?'class="active"':""}
-href="/guardcontrol/herramientas.html">
-
-🛠 Herramientas
-
-</a>
-
-<hr style="border-color:#263449;margin:20px 0;">
-
-<a href="#"
-onclick="cerrarSesion()">
-
-🚪 Cerrar sesión
-
-</a>
-
-</nav>
-
-`;
-
+      localStorage.removeItem("guardcontrol_usuario");
+      localStorage.removeItem("guardcontrol_session_started");
+      window.location.href = "/guardcontrol/login.html";
+    });
+  }
 }
