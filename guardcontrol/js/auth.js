@@ -1,22 +1,26 @@
+const SESION_MAXIMA_MS = 8 * 60 * 60 * 1000; // 8 horas
+
 function obtenerUsuario() {
   const data = localStorage.getItem("guardcontrol_user");
+  const inicioSesion = localStorage.getItem("guardcontrol_session_started");
 
-  if (!data) {
-    const actual = window.location.pathname + window.location.search;
+  if (!data || !inicioSesion) {
+    redirigirAlLogin();
+    return null;
+  }
 
-    if (!actual.includes("login.html")) {
-      localStorage.setItem("guardcontrol_redirect_after_login", actual);
-    }
+  const tiempoTranscurrido = Date.now() - Number(inicioSesion);
 
-    window.location.href = "/guardcontrol/login.html";
+  if (tiempoTranscurrido > SESION_MAXIMA_MS) {
+    cerrarSesionPorExpiracion();
     return null;
   }
 
   try {
     return JSON.parse(data);
   } catch {
-    localStorage.removeItem("guardcontrol_user");
-    window.location.href = "/guardcontrol/login.html";
+    limpiarSesion();
+    redirigirAlLogin();
     return null;
   }
 }
@@ -29,13 +33,12 @@ function protegerPagina(rolesPermitidos) {
     alert("Acceso denegado para tu rol: " + user.rol);
 
     if (user.rol === "Guardia") {
-      window.location.href = "/guardcontrol/guardia.html";
+      location.href = "/guardcontrol/guardia.html";
     } else if (user.rol === "Supervisor") {
-      window.location.href = "/guardcontrol/reportes.html";
+      location.href = "/guardcontrol/reportes.html";
     } else {
-      window.location.href = "/guardcontrol/";
+      location.href = "/guardcontrol/";
     }
-
     return;
   }
 
@@ -44,8 +47,33 @@ function protegerPagina(rolesPermitidos) {
   });
 }
 
-function cerrarSesion() {
+function guardarDestinoPendiente() {
+  const actual = location.pathname + location.search;
+
+  if (!actual.includes("login.html")) {
+    localStorage.setItem("guardcontrol_redirect_after_login", actual);
+  }
+}
+
+function redirigirAlLogin() {
+  guardarDestinoPendiente();
+  location.href = "/guardcontrol/login.html";
+}
+
+function limpiarSesion() {
   localStorage.removeItem("guardcontrol_user");
+  localStorage.removeItem("guardcontrol_session_started");
+}
+
+function cerrarSesion() {
+  limpiarSesion();
   localStorage.removeItem("guardcontrol_redirect_after_login");
-  window.location.href = "/guardcontrol/login.html";
+  location.href = "/guardcontrol/login.html";
+}
+
+function cerrarSesionPorExpiracion() {
+  limpiarSesion();
+  guardarDestinoPendiente();
+  alert("Tu sesión expiró. Inicia sesión nuevamente.");
+  location.href = "/guardcontrol/login.html";
 }
