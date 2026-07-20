@@ -1,10 +1,11 @@
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
-    const { usuario, password } = body;
+    const usuario = String(body.usuario || "").trim();
+    const password = String(body.password || "");
 
     if (!usuario || !password) {
-      return Response.json({ ok: false, error: "Faltan datos" }, { status: 400 });
+      return Response.json({ ok: false, error: "Ingresa usuario y contraseña." }, { status: 400 });
     }
 
     const user = await context.env.DB.prepare(`
@@ -15,15 +16,11 @@ export async function onRequestPost(context) {
     `).bind(usuario, password).first();
 
     if (!user) {
-      return Response.json({ ok: false, error: "Usuario o contraseña incorrectos" }, { status: 401 });
+      return Response.json({ ok: false, error: "Usuario o contraseña incorrectos." }, { status: 401 });
     }
 
-    return Response.json({
-      ok: true,
-      user
-    });
-
+    return Response.json({ ok: true, user });
   } catch (error) {
-    return Response.json({ ok: false, error: error.message }, { status: 500 });
+    return Response.json({ ok: false, error: error.message || "Error interno del servidor." }, { status: 500 });
   }
 }
