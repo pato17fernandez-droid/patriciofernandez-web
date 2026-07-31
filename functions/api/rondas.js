@@ -86,7 +86,56 @@ export async function onRequestPost(context) {
       longitud !== null && longitud !== undefined && longitud !== "";
     const mapa = gpsDisponible ? `https://www.google.com/maps?q=${latitud},${longitud}` : null;
 
-    const mensaje = `✅ NUEVA RONDA REGISTRADA\n\n👮 Guardia: ${guardia}\n🏢 Empresa: ${punto.empresa || "-"}\n📍 Instalación: ${punto.instalacion || "-"}\n📌 Punto: ${punto.nombre}\n🔑 QR: ${punto.codigo_qr}\n\n🌎 GPS: ${gpsDisponible ? `${latitud}, ${longitud}` : "No disponible"}\n🗺️ Mapa: ${mapa || "No disponible"}`;
+    const nombrePunto = (punto.nombre || "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .trim()
+  .toLowerCase();
+
+let mensaje = "";
+
+if (nombrePunto === "inicio de turno") {
+
+  mensaje = `🟢 INICIO DE TURNO
+
+👮 Guardia: ${guardia}
+🏢 Empresa: ${punto.empresa || "-"}
+📍 Instalación: ${punto.instalacion || "-"}
+🕒 Hora: ${new Date().toLocaleString("es-CL", {
+  timeZone: "America/Santiago"
+})}
+
+🌎 GPS: ${gpsDisponible ? `${latitud}, ${longitud}` : "No disponible"}
+🗺️ Mapa: ${mapa || "No disponible"}`;
+
+} else if (nombrePunto === "fin de turno") {
+
+  mensaje = `🔴 FIN DE TURNO
+
+👮 Guardia: ${guardia}
+🏢 Empresa: ${punto.empresa || "-"}
+📍 Instalación: ${punto.instalacion || "-"}
+🕒 Hora: ${new Date().toLocaleString("es-CL", {
+  timeZone: "America/Santiago"
+})}
+
+🌎 GPS: ${gpsDisponible ? `${latitud}, ${longitud}` : "No disponible"}
+🗺️ Mapa: ${mapa || "No disponible"}`;
+
+} else {
+
+  mensaje = `✅ NUEVA RONDA REGISTRADA
+
+👮 Guardia: ${guardia}
+🏢 Empresa: ${punto.empresa || "-"}
+📍 Instalación: ${punto.instalacion || "-"}
+📌 Punto: ${punto.nombre}
+🔑 QR: ${punto.codigo_qr}
+
+🌎 GPS: ${gpsDisponible ? `${latitud}, ${longitud}` : "No disponible"}
+🗺️ Mapa: ${mapa || "No disponible"}`;
+
+}
 
     const chatIdDestino = punto.telegram_chat_id || context.env.TELEGRAM_CHAT_ID;
     const telegram = await enviarTelegram(context.env, chatIdDestino, mensaje);
