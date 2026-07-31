@@ -1,92 +1,213 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>QR Punto - GuardControl</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/style.css">
-  <style>
-    .qr-card {
-      max-width: 420px;
-      margin: 30px auto;
-      background: white;
-      color: #111;
-      padding: 30px;
-      border-radius: 18px;
-      text-align: center;
+<meta charset="UTF-8">
+<title>QR Punto - GuardControl</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+
+body{
+    background:#0b1120;
+}
+
+.print-btn{
+    display:block;
+    width:260px;
+    margin:25px auto;
+}
+
+.qr-card{
+
+    width:420px;
+    margin:20px auto;
+
+    background:#fff;
+    color:#111;
+
+    border-radius:20px;
+    padding:35px;
+
+    text-align:center;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+
+}
+
+.logo-qr{
+
+    margin:0;
+
+    font-size:58px;
+
+    font-weight:900;
+
+    line-height:1;
+
+    letter-spacing:-2px;
+
+}
+
+.logo-green{
+
+    color:#10b981;
+
+}
+
+.subtitulo{
+
+    margin-top:12px;
+
+    margin-bottom:28px;
+
+    font-size:21px;
+
+    color:#666;
+
+}
+
+hr{
+
+    border:none;
+
+    border-top:2px solid #10b981;
+
+    margin:20px 0 25px;
+
+}
+
+.qr-info{
+
+    text-align:left;
+
+    font-size:18px;
+
+    margin:12px 0;
+
+}
+
+.qr-info strong{
+
+    display:inline-block;
+
+    width:120px;
+
+}
+
+.qr-img{
+
+    margin:30px 0;
+
+}
+
+.qr-img img{
+
+    width:290px;
+
+    height:290px;
+
+}
+
+.codigo{
+
+    margin-top:20px;
+
+    font-size:17px;
+
+}
+
+@media print{
+
+    body{
+
+        background:white;
+
     }
 
-    .qr-card h1 {
-      margin: 0;
-      color: #111;
+    .print-btn{
+
+        display:none;
+
     }
 
-    .qr-card .brand {
-      color: #00b894;
-      font-weight: bold;
+    .sidebar,
+    .topbar{
+
+        display:none;
+
     }
 
-    .qr-img {
-      margin: 25px 0;
+    .qr-card{
+
+        box-shadow:none;
+
+        border:2px solid #111;
+
+        margin:0 auto;
+
     }
 
-    .qr-img img {
-      width: 260px;
-      height: 260px;
-    }
+}
 
-    .qr-info {
-      font-size: 16px;
-      margin: 8px 0;
-    }
+</style>
 
-    .print-btn {
-      display: block;
-      max-width: 420px;
-      margin: 20px auto;
-    }
-
-    @media print {
-      body {
-        background: white;
-      }
-
-      .print-btn {
-        display: none;
-      }
-
-      .sidebar,
-      .topbar {
-        display: none;
-      }
-
-      .qr-card {
-        box-shadow: none;
-        border: 2px solid #111;
-      }
-    }
-  </style>
 </head>
+
 <body>
 
-<button class="print-btn" onclick="window.print()">Imprimir QR</button>
+<button class="print-btn" onclick="window.print()">
+🖨️ Imprimir QR
+</button>
 
 <div class="qr-card">
-  <h1>Guard<span class="brand">Control</span></h1>
-  <p>Sistema de Control de Rondas</p>
 
-  <div class="qr-info"><strong>Empresa:</strong> <span id="empresa">-</span></div>
-  <div class="qr-info"><strong>Instalación:</strong> <span id="instalacion">-</span></div>
-  <div class="qr-info"><strong>Punto:</strong> <span id="punto">-</span></div>
+    <h1 class="logo-qr">
+        Guard<span class="logo-green">Control</span>
+    </h1>
 
-  <div class="qr-img">
-    <img id="qr" src="">
-  </div>
+    <div class="subtitulo">
+        Sistema de Control de Rondas
+    </div>
 
-  <div class="qr-info"><strong>Código:</strong> <span id="codigo">-</span></div>
+    <hr>
+
+    <div class="qr-info">
+        <strong>Empresa:</strong>
+        <span id="empresa">-</span>
+    </div>
+
+    <div class="qr-info">
+        <strong>Instalación:</strong>
+        <span id="instalacion">-</span>
+    </div>
+
+    <div class="qr-info">
+        <strong>Punto:</strong>
+        <span id="punto">-</span>
+    </div>
+
+    <div class="qr-img">
+
+        <img
+            id="qr"
+            src=""
+            alt="Código QR">
+
+    </div>
+
+    <div class="codigo">
+
+        <strong>Código:</strong>
+
+        <span id="codigo">-</span>
+
+    </div>
+
 </div>
 
 <script src="js/auth.js"></script>
 <script src="js/qr.js"></script>
+
 </body>
 </html>
