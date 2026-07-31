@@ -79,15 +79,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function redirigirSegunRol(rol) {
     const rolNormalizado = String(rol).trim().toLowerCase();
-    if (rolNormalizado === "guardia") { window.location.href = "/guardcontrol/guardia.html"; return; }
-    if (rolNormalizado === "supervisor") { window.location.href = "/guardcontrol/reportes.html"; return; }
-    if (rolNormalizado === "administrador") { window.location.href = "/guardcontrol/"; return; }
+    if (rolNormalizado === "guardia") { window.location.href = "/guardia.html"; return; }
+    if (rolNormalizado === "supervisor") { window.location.href = "/reportes.html"; return; }
+    if (rolNormalizado === "administrador") { window.location.href = "/"; return; }
     localStorage.removeItem("guardcontrol_user");
     localStorage.removeItem("guardcontrol_session_started");
     mostrarMensaje(`El rol "${rol}" no está reconocido por el sistema.`, "error");
   }
 
   function destinoSeguro(destino) {
-    return typeof destino === "string" && destino.startsWith("/guardcontrol/") && !destino.includes("login.html");
+    return typeof destino === "string" && destino.startsWith("/") && !destino.includes("login.html");
   }
 });

@@ -6,13 +6,13 @@ function cargarMenu(paginaActiva) {
   }
 
   const enlaces = [
-    { id: "dashboard", texto: "Centro de Operaciones", icono: "🏠", url: "/guardcontrol/" },
-    { id: "usuarios", texto: "Usuarios", icono: "👥", url: "/guardcontrol/usuarios.html" },
-    { id: "empresas", texto: "Empresas", icono: "🏢", url: "/guardcontrol/empresas.html" },
-    { id: "instalaciones", texto: "Instalaciones", icono: "📍", url: "/guardcontrol/instalaciones.html" },
-    { id: "puntos", texto: "Puntos QR", icono: "🔳", url: "/guardcontrol/puntos.html" },
-    { id: "reportes", texto: "Reportes", icono: "📊", url: "/guardcontrol/reportes.html" },
-    { id: "herramientas", texto: "Herramientas", icono: "🛠️", url: "/guardcontrol/herramientas.html" }
+    { id: "dashboard", texto: "Centro de Operaciones", icono: "🏠", url: "/" },
+    { id: "usuarios", texto: "Usuarios", icono: "👥", url: "/usuarios.html" },
+    { id: "empresas", texto: "Empresas", icono: "🏢", url: "/empresas.html" },
+    { id: "instalaciones", texto: "Instalaciones", icono: "📍", url: "/instalaciones.html" },
+    { id: "puntos", texto: "Puntos QR", icono: "🔳", url: "/puntos.html" },
+    { id: "reportes", texto: "Reportes", icono: "📊", url: "/reportes.html" },
+    { id: "herramientas", texto: "Herramientas", icono: "🛠️", url: "/herramientas.html" }
   ];
 
   const enlacesHtml = enlaces.map((enlace) => {
@@ -48,7 +48,7 @@ function cargarMenu(paginaActiva) {
 
       localStorage.removeItem("guardcontrol_usuario");
       localStorage.removeItem("guardcontrol_session_started");
-      window.location.href = "/guardcontrol/login.html";
+      window.location.href = "/login.html";
     });
   }
 }

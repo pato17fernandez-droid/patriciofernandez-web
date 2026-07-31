@@ -10,7 +10,7 @@ document.getElementById("instalacion").innerText = instalacion;
 document.getElementById("punto").innerText = punto;
 document.getElementById("codigo").innerText = codigo;
 
-const urlMarcaje = `${location.origin}/guardcontrol/marcar.html?punto=${encodeURIComponent(codigo)}`;
+const urlMarcaje = `${location.origin}/marcar.html?punto=${encodeURIComponent(codigo)}`;
 
 const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(urlMarcaje)}`;
 

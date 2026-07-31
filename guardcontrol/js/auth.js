@@ -48,14 +48,14 @@ function protegerPagina(rolesPermitidos = []) {
 
 function guardarDestinoPendiente() {
   const actual = window.location.pathname + window.location.search;
-  if (actual.startsWith("/guardcontrol/") && !actual.includes("login.html")) {
+  if (actual.startsWith("/") && !actual.includes("login.html")) {
     localStorage.setItem("guardcontrol_redirect_after_login", actual);
   }
 }
 
 function redirigirAlLogin() {
   guardarDestinoPendiente();
-  window.location.href = "/guardcontrol/login.html";
+  window.location.href = "/login.html";
 }
 
 function limpiarSesion() {
@@ -66,19 +66,19 @@ function limpiarSesion() {
 function cerrarSesion() {
   limpiarSesion();
   localStorage.removeItem("guardcontrol_redirect_after_login");
-  window.location.href = "/guardcontrol/login.html";
+  window.location.href = "/login.html";
 }
 
 function cerrarSesionPorExpiracion() {
   guardarDestinoPendiente();
   limpiarSesion();
   alert("Tu sesión expiró. Inicia sesión nuevamente.");
-  window.location.href = "/guardcontrol/login.html";
+  window.location.href = "/login.html";
 }
 
 function redirigirSegunRol(rol) {
   const rolNormalizado = String(rol).trim().toLowerCase();
-  if (rolNormalizado === "guardia") { window.location.href = "/guardcontrol/guardia.html"; return; }
-  if (rolNormalizado === "supervisor") { window.location.href = "/guardcontrol/reportes.html"; return; }
-  window.location.href = "/guardcontrol/";
+  if (rolNormalizado === "guardia") { window.location.href = "/guardia.html"; return; }
+  if (rolNormalizado === "supervisor") { window.location.href = "/reportes.html"; return; }
+  window.location.href = "/";
 }
