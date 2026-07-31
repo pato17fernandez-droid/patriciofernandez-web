@@ -2,64 +2,168 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Instalaciones - GuardControl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Instalaciones - GuardControl</title>
+
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
-<div class="app">
-  <aside class="sidebar">
-    <div class="logo">Guard<span>Control</span></div>
-    <div class="subtitle">Control inteligente de rondas</div>
-    <nav class="menu" id="menu"></nav>
-  </aside>
+  <div class="app">
 
-  <main class="content">
-    <div class="topbar">
-      <h1>Instalaciones</h1>
-      <div>
-  <div class="user">Cargando...</div>
-  <button onclick="cerrarSesion()" style="margin-top:8px;">Cerrar sesión</button>
-  </div>
-    </div>
-
-    <section class="panel">
-      <h2>Nueva instalación</h2>
-
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:25px;">
-        <select id="empresa_id"></select>
-        <input id="nombre" placeholder="Nombre instalación">
-        <input id="direccion" placeholder="Dirección">
-        <input id="latitud" placeholder="Latitud opcional">
-        <input id="longitud" placeholder="Longitud opcional">
-        <button onclick="crearInstalacion()">Guardar instalación</button>
+    <aside class="sidebar">
+      <div class="logo">
+        Guard<span>Control</span>
       </div>
 
-      <h2>Instalaciones registradas</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Empresa</th>
-            <th>Nombre</th>
-            <th>Dirección</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody id="tablaInstalaciones">
-          <tr><td colspan="5">Cargando instalaciones...</td></tr>
-        </tbody>
-      </table>
-    </section>
-  </main>
-</div>
+      <div class="subtitle">
+        Control inteligente de rondas
+      </div>
 
-<script src="js/auth.js"></script>
-<script src="js/menu.js"></script>
-<script>
-  protegerPagina(["Administrador"]);
-  cargarMenu("instalaciones");
-</script>
-<script src="js/instalaciones.js"></script>
+      <nav class="menu" id="menu"></nav>
+    </aside>
+
+    <main class="content">
+
+      <div class="topbar">
+        <h1>Instalaciones</h1>
+
+        <div>
+          <div class="user">
+            Cargando...
+          </div>
+
+          <button
+            type="button"
+            onclick="cerrarSesion()"
+            style="margin-top: 8px;"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      <section class="panel">
+
+        <h2>Nueva instalación</h2>
+
+        <div
+          style="
+            display: grid;
+            grid-template-columns: repeat(
+              auto-fit,
+              minmax(200px, 1fr)
+            );
+            gap: 12px;
+            margin-bottom: 25px;
+          "
+        >
+
+          <select id="empresa_id">
+            <option value="">
+              Cargando empresas...
+            </option>
+          </select>
+
+          <input
+            id="nombre"
+            type="text"
+            placeholder="Nombre de la instalación"
+            autocomplete="off"
+          >
+
+          <input
+            id="direccion"
+            type="text"
+            placeholder="Dirección"
+            autocomplete="street-address"
+          >
+
+          <input
+            id="latitud"
+            type="text"
+            inputmode="decimal"
+            placeholder="Latitud opcional"
+            autocomplete="off"
+          >
+
+          <input
+            id="longitud"
+            type="text"
+            inputmode="decimal"
+            placeholder="Longitud opcional"
+            autocomplete="off"
+          >
+
+          <input
+            id="telegram_chat_id"
+            type="text"
+            inputmode="numeric"
+            placeholder="Chat ID Telegram (-100...)"
+            autocomplete="off"
+          >
+
+          <button
+            type="button"
+            onclick="crearInstalacion()"
+          >
+            Guardar instalación
+          </button>
+
+        </div>
+
+        <p
+          style="
+            margin-top: -10px;
+            margin-bottom: 25px;
+            color: #9ca3af;
+            font-size: 13px;
+          "
+        >
+          El Chat ID de Telegram permite que las alertas de esta
+          instalación lleguen a su propio grupo. Si se deja vacío,
+          se utilizará el grupo general configurado en Cloudflare.
+        </p>
+
+        <h2>Instalaciones registradas</h2>
+
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Empresa</th>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Chat ID Telegram</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+
+            <tbody id="tablaInstalaciones">
+              <tr>
+                <td colspan="6">
+                  Cargando instalaciones...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/menu.js"></script>
+
+  <script>
+    protegerPagina(["Administrador"]);
+    cargarMenu("instalaciones");
+  </script>
+
+  <script src="js/instalaciones.js"></script>
 </body>
 </html>
