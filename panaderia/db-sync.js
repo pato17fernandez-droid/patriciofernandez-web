@@ -1,89 +1,197 @@
 (() => {
-  const API='/api/panaderia/state';
+  const STATE_API='/api/panaderia/state';
+  const HISTORY_API='/api/panaderia/historial';
   const LOCAL_KEY='panaderiaSistemaV1';
-  let syncing=false,remoteReady=false,reportMode='month',reportMonth='',reportFrom='',reportTo='';
+  let syncing=false,remoteReady=false,historyReady=false;
+  let reportMode='month',reportMonth='',reportFrom='',reportTo='';
+  let panHistory=[];
+
   const el=id=>document.getElementById(id);
   const fmt=n=>Number(n||0).toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:3});
   const clp=n=>new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(Number(n||0));
   const monthName=v=>{if(!v)return'';const [y,m]=v.split('-');return new Date(Number(y),Number(m)-1,1).toLocaleDateString('es-CL',{month:'long',year:'numeric'}).replace(/^./,x=>x.toUpperCase())};
+  const escLocal=s=>String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));
+  const fmtDateLocal=d=>{if(!d)return'';const [y,m,day]=d.split('-');return `${day}-${m}-${y}`};
 
   function installReportUI(){
     const section=el('section-informes');
     if(!section||el('reportFilters'))return;
     const controls=document.createElement('div');
     controls.id='reportFilters'; controls.className='card-panel';
-    controls.innerHTML=`<div class="panel-head"><div><h2>Período del informe</h2><p>Separa automáticamente por mes o selecciona cualquier rango para informes semanales.</p></div></div>
+    controls.innerHTML=`
+      <div class="panel-head"><div><h2>Período del informe</h2><p>El historial de Excel está separado por mes. También puedes usar cualquier rango para un informe semanal.</p></div></div>
       <div class="filter-row">
         <select id="reportMode" class="form-select compact-select"><option value="month">Mensual</option><option value="custom">Rango personalizado</option></select>
         <select id="reportMonth" class="form-select compact-select"></select>
         <input id="reportFrom" type="date" class="form-control compact-select d-none">
         <input id="reportTo" type="date" class="form-control compact-select d-none">
         <button id="applyReport" class="primary-btn"><i class="bi bi-funnel"></i>Aplicar</button>
-      </div><div id="quickWeeks" class="filter-row mt-3"></div>`;
+      </div>
+      <div id="quickWeeks" class="filter-row mt-3"></div>`;
     section.insertBefore(controls,el('reportCards'));
-    const extra=document.createElement('div'); extra.className='two-col'; extra.innerHTML=`
+
+    const extra=document.createElement('div');
+    extra.className='two-col';
+    extra.innerHTML=`
       <div class="card-panel"><div class="panel-head"><div><h2>Detalle por producto</h2><p id="reportRangeLabel"></p></div></div><div id="reportProducts"></div></div>
-      <div class="card-panel"><div class="panel-head"><div><h2>Resumen de guías</h2><p>Pagado y pendiente del período</p></div></div><div id="reportGuideSummary"></div></div>`;
+      <div class="card-panel"><div class="panel-head"><div><h2>Resumen de guías</h2><p>Estado de pago según los Excel importados</p></div></div><div id="reportGuideSummary"></div></div>`;
     el('reportCards').after(extra);
-    el('reportMode').addEventListener('change',()=>{reportMode=el('reportMode').value;toggleReportInputs();renderReports()});
-    el('reportMonth').addEventListener('change',()=>{reportMonth=el('reportMonth').value;buildQuickWeeks();renderReports()});
-    el('applyReport').addEventListener('click',()=>{reportFrom=el('reportFrom').value;reportTo=el('reportTo').value;renderReports()});
+
+    el('reportMode').addEventListener('change',()=>{
+      reportMode=el('reportMode').value;
+      toggleReportInputs();
+      renderHistoricalReports();
+    });
+    el('reportMonth').addEventListener('change',()=>{
+      reportMonth=el('reportMonth').value;
+      buildQuickWeeks();
+      renderHistoricalReports();
+    });
+    el('applyReport').addEventListener('click',()=>{
+      reportFrom=el('reportFrom').value;
+      reportTo=el('reportTo').value;
+      renderHistoricalReports();
+    });
   }
 
   function refreshMonthOptions(){
     if(!el('reportMonth'))return;
-    const months=[...new Set((db.orders||[]).map(o=>(o.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
-    const previous=reportMonth;
-    if(!reportMonth)reportMonth=months[0]||new Date().toISOString().slice(0,7);
+    const months=[...new Set(panHistory.map(r=>(r.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
+    if(!reportMonth) reportMonth=months[0]||new Date().toISOString().slice(0,7);
+    if(!months.includes(reportMonth)&&months.length) reportMonth=months[0];
     el('reportMonth').innerHTML=months.map(m=>`<option value="${m}">${monthName(m)}</option>`).join('')||`<option value="${reportMonth}">${monthName(reportMonth)}</option>`;
-    if(months.includes(previous))reportMonth=previous;
     el('reportMonth').value=reportMonth;
     buildQuickWeeks();
   }
+
   function toggleReportInputs(){
-    const custom=reportMode==='custom'; el('reportMonth')?.classList.toggle('d-none',custom); el('reportFrom')?.classList.toggle('d-none',!custom); el('reportTo')?.classList.toggle('d-none',!custom); el('quickWeeks')?.classList.toggle('d-none',custom);
+    const custom=reportMode==='custom';
+    el('reportMonth')?.classList.toggle('d-none',custom);
+    el('reportFrom')?.classList.toggle('d-none',!custom);
+    el('reportTo')?.classList.toggle('d-none',!custom);
+    el('quickWeeks')?.classList.toggle('d-none',custom);
   }
+
   function monthLastDay(month){const [y,m]=month.split('-').map(Number);return new Date(y,m,0).getDate()}
   function rangeForReport(){
     if(reportMode==='custom'&&reportFrom&&reportTo)return [reportFrom,reportTo];
-    const last=monthLastDay(reportMonth); return [`${reportMonth}-01`,`${reportMonth}-${String(last).padStart(2,'0')}`];
+    const last=monthLastDay(reportMonth);
+    return [`${reportMonth}-01`,`${reportMonth}-${String(last).padStart(2,'0')}`];
   }
+
   function buildQuickWeeks(){
-    const q=el('quickWeeks'); if(!q||!reportMonth)return; const last=monthLastDay(reportMonth); const blocks=[[1,6],[7,13],[14,20],[21,27],[28,last]];
-    q.innerHTML='<span class="text-muted small me-1">Semanas rápidas:</span>'+blocks.filter(([a,b])=>a<=last).map(([a,b],i)=>`<button type="button" class="secondary-btn week-btn" data-a="${a}" data-b="${b}">Semana ${i+1}: ${a}-${b}</button>`).join('');
-    q.querySelectorAll('.week-btn').forEach(btn=>btn.addEventListener('click',()=>{const a=btn.dataset.a.padStart(2,'0'),b=btn.dataset.b.padStart(2,'0');reportMode='custom';reportFrom=`${reportMonth}-${a}`;reportTo=`${reportMonth}-${b}`;el('reportMode').value='custom';el('reportFrom').value=reportFrom;el('reportTo').value=reportTo;toggleReportInputs();renderReports()}));
+    const q=el('quickWeeks');
+    if(!q||!reportMonth)return;
+    const last=monthLastDay(reportMonth);
+    const blocks=[[1,6],[7,13],[14,20],[21,27],[28,last]];
+    q.innerHTML='<span class="text-muted small me-1">Rangos rápidos:</span>'+blocks.filter(([a])=>a<=last).map(([a,b],i)=>`<button type="button" class="secondary-btn week-btn" data-a="${a}" data-b="${b}">Semana ${i+1}: ${a}-${b}</button>`).join('');
+    q.querySelectorAll('.week-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      const a=String(btn.dataset.a).padStart(2,'0'),b=String(btn.dataset.b).padStart(2,'0');
+      reportMode='custom'; reportFrom=`${reportMonth}-${a}`; reportTo=`${reportMonth}-${b}`;
+      el('reportMode').value='custom'; el('reportFrom').value=reportFrom; el('reportTo').value=reportTo;
+      toggleReportInputs(); renderHistoricalReports();
+    }));
   }
 
-  function enhancedOrderKg(o){return Number(o.hallulla||0)+Number(o.marraqueta||0)+Number(o.ciabatta||0)+Number(o.medioBaguette||0)+Number(o.panCompleto||0)}
-  function enhancedProducts(o){return [['Hallulla',o.hallulla],['Marraqueta',o.marraqueta],['Ciabatta',o.ciabatta],['Medio baguette',o.medioBaguette],['Pan completo',o.panCompleto]].filter(x=>Number(x[1])>0).map(x=>`${x[0]} ${fmt(x[1])} kg`).join(' · ')||'-'}
+  function historyKg(r){return Number(r.hallulla||0)+Number(r.marraqueta||0)+Number(r.ciabatta||0)+Number(r.medioBaguette||0)+Number(r.panCompleto||0)}
 
-  function enhancedReports(){
-    if(!el('reportCards'))return; refreshMonthOptions(); toggleReportInputs();
-    const [from,to]=rangeForReport(); const orders=(db.orders||[]).filter(o=>o.date>=from&&o.date<=to); const guides=(db.guides||[]).filter(g=>g.date>=from&&g.date<=to);
-    const products={hallulla:0,marraqueta:0,ciabatta:0,medioBaguette:0,panCompleto:0}; orders.forEach(o=>Object.keys(products).forEach(k=>products[k]+=Number(o[k]||0)));
-    const totalKg=Object.values(products).reduce((a,b)=>a+b,0), sales=guides.reduce((s,g)=>s+Number(g.total||0),0), paid=guides.reduce((s,g)=>s+Number(g.paid||0),0), due=Math.max(0,sales-paid);
+  function renderHistoricalReports(){
+    if(!el('reportCards'))return;
+    refreshMonthOptions(); toggleReportInputs();
+    const [from,to]=rangeForReport();
+    const rows=panHistory.filter(r=>r.date>=from&&r.date<=to);
+    const products={hallulla:0,marraqueta:0,ciabatta:0,medioBaguette:0,panCompleto:0};
+    rows.forEach(r=>Object.keys(products).forEach(k=>products[k]+=Number(r[k]||0)));
+    const totalKg=Object.values(products).reduce((a,b)=>a+b,0);
+    const guideRows=rows.filter(r=>r.guide);
+    const amount=guideRows.reduce((s,r)=>s+Number(r.amount||0),0);
+    const paidAmount=guideRows.filter(r=>r.paid).reduce((s,r)=>s+Number(r.amount||0),0);
+    const pendingAmount=Math.max(0,amount-paidAmount);
     const label=reportMode==='month'?monthName(reportMonth):`${fmtDateLocal(from)} al ${fmtDateLocal(to)}`;
-    el('reportCards').innerHTML=stat('bi-box-seam','Kg del período',`${fmt(totalKg)} kg`,label)+stat('bi-receipt','Monto guías',clp(sales),`${guides.length} guías`)+stat('bi-check-circle','Pagado',clp(paid),'Según estado histórico')+stat('bi-exclamation-circle','Pendiente',clp(due),'Saldo del período');
-    if(el('reportRangeLabel'))el('reportRangeLabel').textContent=label;
-    const pRows=[['Hallulla',products.hallulla],['Marraqueta',products.marraqueta],['Ciabatta',products.ciabatta],['Medio baguette',products.medioBaguette],['Pan completo',products.panCompleto]].filter(x=>x[1]>0||['Hallulla','Marraqueta','Ciabatta'].includes(x[0]));
-    if(el('reportProducts'))el('reportProducts').innerHTML=pRows.map(([n,v])=>`<div class="report-row-head py-2 border-bottom"><span>${n}</span><strong>${fmt(v)} kg</strong></div>`).join('')+`<div class="report-row-head py-3"><strong>TOTAL</strong><strong>${fmt(totalKg)} kg</strong></div>`;
-    if(el('reportGuideSummary'))el('reportGuideSummary').innerHTML=`<div class="report-row-head py-2 border-bottom"><span>Guías del período</span><strong>${guides.length}</strong></div><div class="report-row-head py-2 border-bottom"><span>Pagadas</span><strong>${guides.filter(g=>Number(g.paid||0)>=Number(g.total||0)&&Number(g.total||0)>0).length}</strong></div><div class="report-row-head py-2 border-bottom"><span>Con saldo</span><strong>${guides.filter(g=>Number(g.total||0)>Number(g.paid||0)).length}</strong></div><div class="report-row-head py-2"><span>Saldo pendiente</span><strong class="money-pending">${clp(due)}</strong></div>`;
-    const byClient=(db.clients||[]).map(c=>({name:c.name,kg:orders.filter(o=>o.clientId===c.id).reduce((s,o)=>s+enhancedOrderKg(o),0)})).filter(x=>x.kg>0).sort((a,b)=>b.kg-a.kg),max=Math.max(1,...byClient.map(x=>x.kg));
-    el('reportClientKg').innerHTML=byClient.length?byClient.map((x,i)=>`<div class="report-row"><div class="report-row-head"><span>${i===0?'🏆 ':''}${escLocal(x.name)}</span><strong>${fmt(x.kg)} kg</strong></div><div class="report-bar"><span style="width:${Math.round(x.kg/max*100)}%"></span></div></div>`).join(''):'<p class="text-muted">Sin kilos en este período.</p>';
-    const balances=(db.clients||[]).map(c=>({name:c.name,balance:guides.filter(g=>g.clientId===c.id).reduce((s,g)=>s+Math.max(0,Number(g.total||0)-Number(g.paid||0)),0)})).filter(x=>x.balance>0).sort((a,b)=>b.balance-a.balance);
-    el('reportReceivables').innerHTML=balances.length?balances.map(x=>`<div class="report-row-head py-2 border-bottom"><span>${escLocal(x.name)}</span><strong class="money-pending">${clp(x.balance)}</strong></div>`).join(''):'<p class="text-muted">No hay saldos pendientes en el período.</p>';
-  }
-  function fmtDateLocal(d){if(!d)return'';const [y,m,day]=d.split('-');return `${day}-${m}-${y}`}
-  function escLocal(s=''){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
 
-  async function loadRemote(){try{const r=await fetch(API,{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const data=await r.json();if(data&&Array.isArray(data.clients)){localStorage.setItem(LOCAL_KEY,JSON.stringify(data));db=data;remoteReady=true;refreshMonthOptions();renderAll();console.info('Panadería: datos cargados desde Cloudflare D1')}}catch(e){console.warn('Panadería: no se pudo cargar D1, se mantiene copia local.',e)}}
-  async function pushRemote(snapshot){if(syncing)return;syncing=true;try{const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(snapshot)});if(!r.ok)throw new Error(`${r.status}: ${await r.text()}`);remoteReady=true;console.info('Panadería: cambios guardados en Cloudflare D1')}catch(e){console.error('Panadería: error guardando en D1.',e);if(typeof toast==='function')toast('No se pudo sincronizar con la base de datos')}finally{syncing=false}}
+    el('reportCards').innerHTML=
+      stat('bi-box-seam','Kg del período',`${fmt(totalKg)} kg`,label)+
+      stat('bi-receipt','Monto guías',clp(amount),`${guideRows.length} guías`)+
+      stat('bi-check-circle','Pagado',clp(paidAmount),`${guideRows.filter(r=>r.paid).length} guías pagadas`)+
+      stat('bi-exclamation-circle','Pendiente',clp(pendingAmount),`${guideRows.filter(r=>!r.paid).length} guías pendientes`);
+
+    if(el('reportRangeLabel'))el('reportRangeLabel').textContent=label;
+    if(el('reportProducts'))el('reportProducts').innerHTML=
+      [['Hallulla',products.hallulla],['Marraqueta',products.marraqueta],['Ciabatta',products.ciabatta],['Medio baguette',products.medioBaguette],['Pan completo',products.panCompleto]]
+      .filter(([n,v])=>v>0||['Hallulla','Marraqueta','Ciabatta'].includes(n))
+      .map(([n,v])=>`<div class="report-row-head py-2 border-bottom"><span>${n}</span><strong>${fmt(v)} kg</strong></div>`).join('')+
+      `<div class="report-row-head py-3"><strong>TOTAL</strong><strong>${fmt(totalKg)} kg</strong></div>`;
+
+    if(el('reportGuideSummary'))el('reportGuideSummary').innerHTML=`
+      <div class="report-row-head py-2 border-bottom"><span>Guías del período</span><strong>${guideRows.length}</strong></div>
+      <div class="report-row-head py-2 border-bottom"><span>Pagadas</span><strong>${guideRows.filter(r=>r.paid).length}</strong></div>
+      <div class="report-row-head py-2 border-bottom"><span>Pendientes</span><strong>${guideRows.filter(r=>!r.paid).length}</strong></div>
+      <div class="report-row-head py-2"><span>Monto pendiente</span><strong class="money-pending">${clp(pendingAmount)}</strong></div>`;
+
+    const map=new Map();
+    rows.forEach(r=>{
+      const key=r.clientId||r.clientName||'sin-cliente';
+      const item=map.get(key)||{name:r.clientName||getClient?.(r.clientId)?.name||'Cliente',kg:0};
+      item.kg+=historyKg(r); map.set(key,item);
+    });
+    const byClient=[...map.values()].filter(x=>x.kg>0).sort((a,b)=>b.kg-a.kg);
+    const max=Math.max(1,...byClient.map(x=>x.kg));
+    el('reportClientKg').innerHTML=byClient.length?byClient.map((x,i)=>`<div class="report-row"><div class="report-row-head"><span>${i===0?'🏆 ':''}${escLocal(x.name)}</span><strong>${fmt(x.kg)} kg</strong></div><div class="report-bar"><span style="width:${Math.round(x.kg/max*100)}%"></span></div></div>`).join(''):'<p class="text-muted">Sin kilos en este período.</p>';
+
+    const debts=new Map();
+    guideRows.filter(r=>!r.paid&&Number(r.amount||0)>0).forEach(r=>{
+      const name=r.clientName||getClient?.(r.clientId)?.name||'Cliente';
+      debts.set(name,(debts.get(name)||0)+Number(r.amount||0));
+    });
+    el('reportReceivables').innerHTML=debts.size?[...debts.entries()].sort((a,b)=>b[1]-a[1]).map(([name,balance])=>`<div class="report-row-head py-2 border-bottom"><span>${escLocal(name)}</span><strong class="money-pending">${clp(balance)}</strong></div>`).join(''):'<p class="text-muted">No hay saldos pendientes en el período.</p>';
+  }
+
+  async function loadHistory(){
+    try{
+      const r=await fetch(HISTORY_API,{cache:'no-store'});
+      if(!r.ok)throw new Error(`HTTP ${r.status}`);
+      const data=await r.json();
+      panHistory=Array.isArray(data.history)?data.history:[];
+      window.panHistorial=panHistory;
+      historyReady=true;
+      refreshMonthOptions();
+      renderHistoricalReports();
+      console.info('Panadería: historial mensual cargado por separado');
+    }catch(e){console.warn('Panadería: no se pudo cargar historial mensual.',e)}
+  }
+
+  async function loadRemote(){
+    try{
+      const r=await fetch(STATE_API,{cache:'no-store'});
+      if(!r.ok)throw new Error(`HTTP ${r.status}`);
+      const data=await r.json();
+      if(data&&Array.isArray(data.clients)){
+        localStorage.setItem(LOCAL_KEY,JSON.stringify(data));
+        db=data; remoteReady=true; renderAll(); renderHistoricalReports();
+        console.info('Panadería: datos operativos cargados desde Cloudflare D1');
+      }
+    }catch(e){console.warn('Panadería: no se pudo cargar D1, se mantiene copia local.',e)}
+  }
+
+  async function pushRemote(snapshot){
+    if(syncing)return; syncing=true;
+    try{
+      const r=await fetch(STATE_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(snapshot)});
+      if(!r.ok)throw new Error(`${r.status}: ${await r.text()}`);
+      remoteReady=true;
+    }catch(e){console.error('Panadería: error guardando en D1.',e);if(typeof toast==='function')toast('No se pudo sincronizar con la base de datos')}
+    finally{syncing=false}
+  }
 
   window.addEventListener('DOMContentLoaded',async()=>{
     installReportUI();
-    try{orderKg=enhancedOrderKg;orderProducts=enhancedProducts;renderReports=enhancedReports}catch(e){console.warn(e)}
+    try{renderReports=renderHistoricalReports}catch(e){console.warn(e)}
+    await loadHistory();
     await loadRemote();
-    if(typeof saveData==='function'){const original=saveData;saveData=function(){original();pushRemote(db)}}
-    window.panaderiaDbStatus=()=>({remoteReady});
+    if(typeof saveData==='function'){
+      const original=saveData;
+      saveData=function(){original();pushRemote(db)};
+    }
+    window.panaderiaDbStatus=()=>({remoteReady,historyReady,historyRows:panHistory.length});
   });
 })();
