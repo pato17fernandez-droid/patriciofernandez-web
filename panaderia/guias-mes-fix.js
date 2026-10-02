@@ -1,3 +1,4 @@
+document.write('<script src="db-first.js?v=20261002-1846"><\/script>');
 (() => {
   const MONTH_KEY='panaderiaMesTrabajo';
   const CLIENT_API='/api/panaderia/client-save';
@@ -43,6 +44,7 @@
   }
 
   async function markGuidePaidPersisted(id){
+    if(window.panaderiaDbFirst?.mode==='row-level-d1' && typeof window.markGuidePaid==='function' && window.markGuidePaid!==markGuidePaidPersisted) return window.markGuidePaid(id);
     const g=(db.guides||[]).find(x=>x.id===id);
     if(!g) return;
     const balance=Math.max(0,Number(g.total||0)-Number(g.paid||0));
@@ -51,72 +53,48 @@
     try{
       const r=await fetch(GUIDE_PAID_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({guideId:id,date:today()}),keepalive:true});
       if(!r.ok) throw new Error(await r.text());
-      g.paid=Number(g.total||0);
-      g.status='Pagada';
+      g.paid=Number(g.total||0); g.status='Pagada';
       db.payments=db.payments||[];
       const pid=`auto-${id}`;
       if(!db.payments.some(p=>p.id===pid)) db.payments.unshift({id:pid,guideId:g.id,clientId:g.clientId,date:today(),amount:balance,method:'Pago total',notes:'Marcada como pagada desde Guías'});
-      localStorage.setItem('panaderiaSistemaV1',JSON.stringify(db));
-      fixedRenderGuides();
-      if(typeof renderPayments==='function') renderPayments();
-      if(typeof renderDashboard==='function') renderDashboard();
-      if(typeof renderClients==='function') renderClients();
+      localStorage.setItem('panaderiaSistemaV1',JSON.stringify(db)); fixedRenderGuides();
+      if(typeof renderPayments==='function') renderPayments(); if(typeof renderDashboard==='function') renderDashboard(); if(typeof renderClients==='function') renderClients();
       if(typeof toast==='function') toast(`Guía N° ${g.number} marcada como pagada`);
-    }catch(e){
-      console.error(e);
-      alert('No se pudo guardar el pago en la base de datos. Intenta nuevamente.');
-    }
+    }catch(e){console.error(e);alert('No se pudo guardar el pago en la base de datos. Intenta nuevamente.');}
   }
 
   function bindClientSave(){
-    const form=byId('entityForm');
-    if(!form || form.dataset.clientDirectSave) return;
+    if(window.panaderiaDbFirst?.mode==='row-level-d1') return;
+    const form=byId('entityForm'); if(!form || form.dataset.clientDirectSave) return;
     form.dataset.clientDirectSave='1';
     form.addEventListener('submit',()=>{
       if(typeof currentAction==='undefined' || currentAction!=='client') return;
-      const fd=new FormData(form);
-      const wantedName=String(fd.get('name')||'').trim();
-      const wantedRut=String(fd.get('rut')||'').trim();
+      const fd=new FormData(form); const wantedName=String(fd.get('name')||'').trim(); const wantedRut=String(fd.get('rut')||'').trim();
       setTimeout(async()=>{
-        const client=(db.clients||[]).find(c=>currentEditId && c.id===currentEditId)
-          || (db.clients||[]).slice().reverse().find(c=>String(c.name||'').trim()===wantedName && (!wantedRut || String(c.rut||'').trim()===wantedRut));
+        const client=(db.clients||[]).find(c=>currentEditId && c.id===currentEditId) || (db.clients||[]).slice().reverse().find(c=>String(c.name||'').trim()===wantedName && (!wantedRut || String(c.rut||'').trim()===wantedRut));
         if(!client) return;
-        try{
-          const r=await fetch(CLIENT_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(client),keepalive:true});
-          if(!r.ok) throw new Error(await r.text());
-          if(typeof toast==='function') toast('Cliente guardado en la base de datos');
-        }catch(e){
-          console.error(e);
-          alert('El cambio del cliente no pudo guardarse en la base de datos. Intenta nuevamente.');
-        }
+        try{const r=await fetch(CLIENT_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(client),keepalive:true});if(!r.ok)throw new Error(await r.text());if(typeof toast==='function')toast('Cliente guardado en la base de datos');}
+        catch(e){console.error(e);alert('El cambio del cliente no pudo guardarse en la base de datos. Intenta nuevamente.');}
       },0);
     });
   }
 
   function bindMonthSelect(id){
-    const node=byId(id);
-    if(!node || node.dataset.monthFixBound) return;
+    const node=byId(id); if(!node || node.dataset.monthFixBound) return;
     node.dataset.monthFixBound='1';
     node.addEventListener('change',()=>{
       localStorage.setItem(MONTH_KEY,node.value);
-      const other=id==='workingMonthFilter'?byId('guideMonthFilter'):byId('workingMonthFilter');
-      if(other) other.value=node.value;
-      fixedRenderGuides();
-      if(typeof renderPayments==='function') renderPayments();
-      if(typeof renderDashboard==='function') renderDashboard();
-      if(typeof renderClients==='function') renderClients();
+      const other=id==='workingMonthFilter'?byId('guideMonthFilter'):byId('workingMonthFilter'); if(other) other.value=node.value;
+      fixedRenderGuides(); if(typeof renderPayments==='function') renderPayments(); if(typeof renderDashboard==='function') renderDashboard(); if(typeof renderClients==='function') renderClients();
     },true);
   }
 
   function install(){
-    try{ renderGuides=fixedRenderGuides; window.renderGuides=fixedRenderGuides; }catch(e){ window.renderGuides=fixedRenderGuides; }
-    window.markGuidePaid=markGuidePaidPersisted;
-    bindClientSave();
-    bindMonthSelect('workingMonthFilter');
-    bindMonthSelect('guideMonthFilter');
-    fixedRenderGuides();
-    setTimeout(()=>{window.markGuidePaid=markGuidePaidPersisted;bindClientSave();bindMonthSelect('workingMonthFilter');bindMonthSelect('guideMonthFilter');fixedRenderGuides()},250);
-    setTimeout(()=>{window.markGuidePaid=markGuidePaidPersisted;bindClientSave();bindMonthSelect('workingMonthFilter');bindMonthSelect('guideMonthFilter');fixedRenderGuides()},1200);
+    try{renderGuides=fixedRenderGuides;window.renderGuides=fixedRenderGuides;}catch(e){window.renderGuides=fixedRenderGuides;}
+    if(!window.panaderiaDbFirst)window.markGuidePaid=markGuidePaidPersisted;
+    bindClientSave(); bindMonthSelect('workingMonthFilter'); bindMonthSelect('guideMonthFilter'); fixedRenderGuides();
+    setTimeout(()=>{bindClientSave();bindMonthSelect('workingMonthFilter');bindMonthSelect('guideMonthFilter');fixedRenderGuides()},250);
+    setTimeout(()=>{bindClientSave();bindMonthSelect('workingMonthFilter');bindMonthSelect('guideMonthFilter');fixedRenderGuides()},1200);
   }
 
   window.addEventListener('DOMContentLoaded',install);
