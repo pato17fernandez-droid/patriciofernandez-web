@@ -82,7 +82,7 @@
       <section id="section-guias" class="app-section">
         <div class="section-toolbar"><div class="filter-row"><div class="search-control"><i class="bi bi-search"></i><input id="guideSearch" placeholder="Buscar N° o cliente"></div><select id="guideStatusFilter" class="form-select compact-select"><option value="">Todos los estados</option><option>Pendiente</option><option>Parcial</option><option>Pagada</option></select></div><button class="primary-btn" data-action="new-guide"><i class="bi bi-file-earmark-plus"></i>Nueva guía</button></div>
         <div id="guideStats" class="mini-stats"></div>
-        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>N° Guía</th><th>Cliente</th><th>Fecha</th><th>Kg</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th></th></tr></thead><tbody id="guidesTable"></tbody></table></div></div>
+        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>N° Guía</th><th>Cliente</th><th>Fecha</th><th>Kg</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="guidesTable"></tbody></table></div></div>
       </section>
 
       <section id="section-pagos" class="app-section">
@@ -104,7 +104,7 @@
       <section id="section-informes" class="app-section">
         <div id="reportCards" class="stats-grid"></div>
         <div class="two-col">
-          <div class="card-panel"><div class="panel-head"><div><h2>Kg por cliente</h2><p>Acumulado de pedidos registrados</p></div></div><div id="reportClientKg"></div></div>
+          <div class="card-panel"><div class="panel-head"><div><h2>Kg por cliente</h2><p>Acumulado del período</p></div></div><div id="reportClientKg"></div></div>
           <div class="card-panel"><div class="panel-head"><div><h2>Cuentas por cobrar</h2><p>Saldo pendiente por cliente</p></div></div><div id="reportReceivables"></div></div>
         </div>
       </section>
@@ -131,5 +131,6 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="app.js"></script>
   <script src="db-sync.js"></script>
+  <script src="operacion.js"></script>
 </body>
 </html>
