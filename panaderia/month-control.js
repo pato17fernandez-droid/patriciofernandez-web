@@ -55,7 +55,7 @@
     if(window.renderDispatch&&document.getElementById('section-despachos')?.dataset.redesigned)return;
     if(document.querySelector('script[data-dispatch-ui]'))return;
     const s=document.createElement('script');
-    s.src='dispatch-ui.js?v=20261002-2139';
+    s.src='dispatch-ui.js?v=20261002-2144';
     s.dataset.dispatchUi='1';
     document.body.appendChild(s);
   }
