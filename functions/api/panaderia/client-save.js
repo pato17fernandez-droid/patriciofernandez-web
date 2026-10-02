@@ -20,6 +20,13 @@ export async function onRequestPost({request,env}){
     await add('precio_marraqueta INTEGER NOT NULL DEFAULT 0');
     await add('precio_ciabatta INTEGER NOT NULL DEFAULT 0');
 
+    const current=await env.DB.prepare('SELECT * FROM pan_clientes WHERE id=?').bind(String(x.id)).first();
+    const has=(k)=>Object.prototype.hasOwnProperty.call(x,k);
+    const zone=has('zone')?String(x.zone||''):String(current?.zona||'');
+    const ph=has('priceHallulla')?Number(x.priceHallulla||0):Number(current?.precio_hallulla||0);
+    const pm=has('priceMarraqueta')?Number(x.priceMarraqueta||0):Number(current?.precio_marraqueta||0);
+    const pc=has('priceCiabatta')?Number(x.priceCiabatta||0):Number(current?.precio_ciabatta||0);
+
     await env.DB.prepare(`INSERT INTO pan_clientes
       (id,nombre,rut,giro,direccion,comuna,telefono,contacto,ruta,zona,precio_hallulla,precio_marraqueta,precio_ciabatta,horno,activo)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
@@ -30,8 +37,8 @@ export async function onRequestPost({request,env}){
         precio_ciabatta=excluded.precio_ciabatta,horno=excluded.horno,activo=excluded.activo`)
       .bind(
         String(x.id),String(x.name||''),String(x.rut||''),String(x.business||''),String(x.address||''),
-        String(x.commune||''),String(x.phone||''),String(x.contact||''),String(x.route||''),String(x.zone||''),
-        Number(x.priceHallulla||0),Number(x.priceMarraqueta||0),Number(x.priceCiabatta||0),x.oven?1:0,x.active===false?0:1
+        String(x.commune||''),String(x.phone||''),String(x.contact||''),String(x.route||''),zone,
+        ph,pm,pc,x.oven?1:0,x.active===false?0:1
       ).run();
 
     return json({ok:true,id:x.id});
