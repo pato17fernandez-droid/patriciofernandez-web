@@ -51,7 +51,17 @@
     return clone;
   }
 
+  function loadDispatchUI(){
+    if(window.renderDispatch&&document.getElementById('section-despachos')?.dataset.redesigned)return;
+    if(document.querySelector('script[data-dispatch-ui]'))return;
+    const s=document.createElement('script');
+    s.src='dispatch-ui.js?v=20261002-2139';
+    s.dataset.dispatchUi='1';
+    document.body.appendChild(s);
+  }
+
   function install(){
+    loadDispatchUI();
     const selected=localStorage.getItem(KEY)||nowMonth();
     replaceSelect('workingMonthFilter');
     replaceSelect('guideMonthFilter');
