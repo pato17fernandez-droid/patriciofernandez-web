@@ -29,9 +29,9 @@
       </div>
       <input type="hidden" name="${key}" value="${Number(value||0)}" data-total-input="${key}">
       <div class="form-grid">
-        <div><label class="form-label">N° bandejas</label><input type="number" min="0" step="1" class="form-control" data-trays="${key}" placeholder="Ej: 4"></div>
-        <div><label class="form-label">Peso que marca la pesa (kg)</label><input type="number" min="0" step="0.01" class="form-control" data-gross="${key}" placeholder="Ej: 18,40"></div>
-        <div class="full d-flex gap-2 flex-wrap"><button type="button" class="primary-btn" data-add-weighing="${key}"><i class="bi bi-plus-circle"></i> Sumar pesaje</button><button type="button" class="secondary-btn" data-add-manual="${key}"><i class="bi bi-plus"></i> Sumar kilos directos</button><input type="number" min="0" step="0.01" class="form-control" data-manual="${key}" placeholder="kg directos" style="max-width:150px"></div>
+        <div><label class="form-label">N° bandejas</label><input type="number" min="0" step="1" class="form-control" data-trays="${key}"></div>
+        <div><label class="form-label">Peso que marca la pesa (kg)</label><input type="number" min="0" step="0.01" class="form-control" data-gross="${key}"></div>
+        <div class="full"><button type="button" class="primary-btn" data-add-weighing="${key}"><i class="bi bi-plus-circle"></i> Sumar pesaje</button></div>
       </div>
       <div class="small mt-2" data-calc-note="${key}"></div>
       <div class="small text-muted mt-1" data-weigh-list="${key}">${Number(value||0)>0?`Inicial: ${kg(value)} kg`:''}</div>
@@ -59,19 +59,10 @@
         if(net<=0){alert('El peso neto no puede ser 0 o negativo. Revisa bandejas y peso.');return;}
         const total=Number(hidden.value||0)+net;
         setTotal(total);
-        note.textContent=`Último pesaje: ${kg(gross)} kg − ${trays} bandeja${trays===1?'':'s'} × ${TRAY_TARE.toFixed(1)} kg = ${kg(net)} kg de pan.`;
+        note.textContent=`${kg(gross)} kg − ${trays} bandeja${trays===1?'':'s'} × ${TRAY_TARE.toFixed(1)} kg = ${kg(net)} kg de pan.`;
         list.innerHTML += `${list.innerHTML?' · ':''}+ ${kg(net)} kg`;
         modal.querySelector(`[data-trays="${key}"]`).value='';
         modal.querySelector(`[data-gross="${key}"]`).value='';
-      });
-      modal.querySelector(`[data-add-manual="${key}"]`)?.addEventListener('click',()=>{
-        const manual=Number(modal.querySelector(`[data-manual="${key}"]`)?.value||0);
-        if(manual<=0){alert('Ingresa los kilos que quieres sumar.');return;}
-        const total=Number(hidden.value||0)+manual;
-        setTotal(total);
-        note.textContent=`Se sumaron ${kg(manual)} kg directos.`;
-        list.innerHTML += `${list.innerHTML?' · ':''}+ ${kg(manual)} kg`;
-        modal.querySelector(`[data-manual="${key}"]`).value='';
       });
     });
     updateGrand();
@@ -81,7 +72,7 @@
     const o=id?(db.orders||[]).find(x=>String(x.id)===String(id)):{};
     currentAction='order'; currentEditId=id;
     byId('modalTitle').textContent=id?'Editar pedido':'Ingresar pedido';
-    byId('modalSubtitle').textContent='Puedes sumar varios pesajes; el sistema descuenta automáticamente la tara de las bandejas.';
+    byId('modalSubtitle').textContent='Pesaje por bandejas con acumulación de kilos.';
     byId('modalSubmit').classList.remove('d-none');
     const month=currentMonth();
     const d=new Date();
@@ -92,7 +83,6 @@
         <div><label class="form-label">Fecha de entrega</label><input name="date" type="date" class="form-control" value="${esc(defaultDate)}" required></div>
         <div><label class="form-label">Estado</label><select name="status" class="form-select">${['Pendiente','En producción','Preparado','Despachado','Entregado'].map(s=>`<option${(o.status||'Pendiente')===s?' selected':''}>${s}</option>`).join('')}</select></div>
       </div>
-      <div class="alert alert-info"><strong>Cómo usarlo:</strong> escribe cuántas bandejas estás pesando y el peso total que marca la pesa. El sistema resta ${TRAY_TARE.toFixed(1)} kg por bandeja y suma los kilos netos de pan. Puedes repetir el proceso todas las veces que necesites.</div>
       ${products.map(([key,label])=>productCard(key,label,o[key]||0)).join('')}
       <div class="card-panel mb-3" style="padding:16px"><div class="d-flex justify-content-between align-items-center"><strong>Total del pedido</strong><strong id="orderGrandTotal" class="fs-4">0,00 kg</strong></div></div>
       <div><label class="form-label">Observaciones</label><textarea name="notes" class="form-control" rows="3">${esc(o.notes||'')}</textarea></div>`;
@@ -105,7 +95,7 @@
     const section=byId('section-despachos');
     if(section&&!section.dataset.ordersOnly){
       section.dataset.ordersOnly='1';
-      section.innerHTML=`<div class="section-toolbar dispatch-toolbar"><div><h2 class="section-inline-title">Ingresar pedidos</h2><p class="muted mb-0">Registra pedidos usando kilos, bandejas y pesajes acumulados.</p></div><button id="newDispatchOrderBtn" class="primary-btn"><i class="bi bi-plus-circle"></i> Ingresar pedido</button></div><div class="card-panel"><div class="panel-head"><div><h2>Pedidos por despachar</h2><p id="pendingOrdersSubtitle"></p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Entrega</th><th>Cliente</th><th>Productos</th><th>Total kg</th><th>Estado</th><th></th></tr></thead><tbody id="dispatchPendingOrders"></tbody></table></div></div>`;
+      section.innerHTML=`<div class="section-toolbar dispatch-toolbar"><div><h2 class="section-inline-title">Ingresar pedidos</h2><p class="muted mb-0">Registra pedidos mediante pesajes acumulados.</p></div><button id="newDispatchOrderBtn" class="primary-btn"><i class="bi bi-plus-circle"></i> Ingresar pedido</button></div><div class="card-panel"><div class="panel-head"><div><h2>Pedidos por despachar</h2><p id="pendingOrdersSubtitle"></p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Entrega</th><th>Cliente</th><th>Productos</th><th>Total kg</th><th>Estado</th><th></th></tr></thead><tbody id="dispatchPendingOrders"></tbody></table></div></div>`;
       byId('newDispatchOrderBtn')?.addEventListener('click',()=>openOrderModal());
     }
     if(!byId('section-historial-despachos')){
