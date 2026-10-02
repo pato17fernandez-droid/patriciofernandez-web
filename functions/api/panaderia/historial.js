@@ -29,7 +29,7 @@ async function ensureSchema(DB){
 }
 
 async function seed(DB){
-  const marker=await DB.prepare("SELECT valor FROM pan_meta WHERE clave='historial_separado_v1'").first();
+  const marker=await DB.prepare("SELECT valor FROM pan_meta WHERE clave='historial_separado_v2'").first();
   if(marker) return;
 
   const rows=[...seedSepA,...seedSepB,...seedOct];
@@ -54,7 +54,9 @@ async function seed(DB){
   await DB.batch([
     DB.prepare("DELETE FROM pan_pedidos WHERE observaciones='Importado desde Excel histórico'"),
     DB.prepare("DELETE FROM pan_guias WHERE observaciones='Importado desde Excel histórico' AND kilos=0 AND total=0"),
-    DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('historial_separado_v1','ok')")
+    DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('historico_excel_2026_09_10','migrado_a_historial')"),
+    DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('historial_separado_v1','ok')"),
+    DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('historial_separado_v2','ok')")
   ]);
 }
 
