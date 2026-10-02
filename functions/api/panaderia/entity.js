@@ -3,6 +3,7 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 async function ensure(DB){
   await DB.batch([
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_clientes (id TEXT PRIMARY KEY,nombre TEXT NOT NULL,rut TEXT DEFAULT '',giro TEXT DEFAULT '',direccion TEXT DEFAULT '',comuna TEXT DEFAULT '',telefono TEXT DEFAULT '',contacto TEXT DEFAULT '',ruta TEXT DEFAULT '',horno INTEGER NOT NULL DEFAULT 0,activo INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
+    DB.prepare(`CREATE TABLE IF NOT EXISTS pan_pedidos (id INTEGER PRIMARY KEY,cliente_id TEXT NOT NULL,hallulla REAL NOT NULL DEFAULT 0,marraqueta REAL NOT NULL DEFAULT 0,ciabatta REAL NOT NULL DEFAULT 0,medio_baguette REAL NOT NULL DEFAULT 0,pan_completo REAL NOT NULL DEFAULT 0,fecha_entrega TEXT NOT NULL,estado TEXT NOT NULL DEFAULT 'Pendiente',observaciones TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_guias (id TEXT PRIMARY KEY,numero TEXT NOT NULL,cliente_id TEXT NOT NULL,fecha TEXT NOT NULL,kilos REAL NOT NULL DEFAULT 0,total INTEGER NOT NULL DEFAULT 0,pagado INTEGER NOT NULL DEFAULT 0,estado TEXT NOT NULL DEFAULT 'Pendiente',observaciones TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_pagos (id TEXT PRIMARY KEY,guia_id TEXT NOT NULL,cliente_id TEXT NOT NULL,fecha TEXT NOT NULL,monto INTEGER NOT NULL DEFAULT 0,medio TEXT DEFAULT '',observaciones TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_bandejas (cliente_id TEXT PRIMARY KEY,entregadas INTEGER NOT NULL DEFAULT 0,devueltas INTEGER NOT NULL DEFAULT 0,ultimo_movimiento TEXT DEFAULT '')`),
@@ -13,6 +14,10 @@ async function ensure(DB){
   for(const def of ["zona TEXT DEFAULT ''",'precio_hallulla INTEGER NOT NULL DEFAULT 0','precio_marraqueta INTEGER NOT NULL DEFAULT 0','precio_ciabatta INTEGER NOT NULL DEFAULT 0']){
     const name=def.split(/\s+/)[0]; if(!cols.has(name)) await DB.prepare(`ALTER TABLE pan_clientes ADD COLUMN ${def}`).run();
   }
+  const orderInfo=await DB.prepare('PRAGMA table_info(pan_pedidos)').all();
+  const orderCols=new Set((orderInfo.results||[]).map(x=>x.name));
+  if(!orderCols.has('medio_baguette')) await DB.prepare('ALTER TABLE pan_pedidos ADD COLUMN medio_baguette REAL NOT NULL DEFAULT 0').run();
+  if(!orderCols.has('pan_completo')) await DB.prepare('ALTER TABLE pan_pedidos ADD COLUMN pan_completo REAL NOT NULL DEFAULT 0').run();
 }
 
 export async function onRequestPost({request,env}){
@@ -28,6 +33,16 @@ export async function onRequestPost({request,env}){
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET nombre=excluded.nombre,rut=excluded.rut,giro=excluded.giro,direccion=excluded.direccion,comuna=excluded.comuna,telefono=excluded.telefono,contacto=excluded.contacto,ruta=excluded.ruta,zona=excluded.zona,precio_hallulla=excluded.precio_hallulla,precio_marraqueta=excluded.precio_marraqueta,precio_ciabatta=excluded.precio_ciabatta,horno=excluded.horno,activo=excluded.activo`)
       .bind(String(x.id),String(x.name||''),String(x.rut||''),String(x.business||''),String(x.address||''),String(x.commune||''),String(x.phone||''),String(x.contact||''),String(x.route||''),String(x.zone||''),Number(x.priceHallulla||0),Number(x.priceMarraqueta||0),Number(x.priceCiabatta||0),x.oven?1:0,x.active===false?0:1).run();
       return json({ok:true});
+    }
+
+    if(type==='order'){
+      if(!x.id||!x.clientId||!x.date)return json({error:'Pedido incompleto'},400);
+      const totalKg=Number(x.hallulla||0)+Number(x.marraqueta||0)+Number(x.ciabatta||0)+Number(x.medioBaguette||0)+Number(x.panCompleto||0);
+      if(totalKg<=0)return json({error:'Ingresa al menos un tipo de pan'},400);
+      await env.DB.prepare(`INSERT INTO pan_pedidos (id,cliente_id,hallulla,marraqueta,ciabatta,medio_baguette,pan_completo,fecha_entrega,estado,observaciones)
+      VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET cliente_id=excluded.cliente_id,hallulla=excluded.hallulla,marraqueta=excluded.marraqueta,ciabatta=excluded.ciabatta,medio_baguette=excluded.medio_baguette,pan_completo=excluded.pan_completo,fecha_entrega=excluded.fecha_entrega,estado=excluded.estado,observaciones=excluded.observaciones`)
+      .bind(Number(x.id),String(x.clientId),Number(x.hallulla||0),Number(x.marraqueta||0),Number(x.ciabatta||0),Number(x.medioBaguette||0),Number(x.panCompleto||0),String(x.date),String(x.status||'Pendiente'),String(x.notes||'')).run();
+      return json({ok:true,totalKg});
     }
 
     if(type==='guide'){
