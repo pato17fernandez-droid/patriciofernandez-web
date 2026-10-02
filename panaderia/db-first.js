@@ -47,7 +47,7 @@
           const lines=[['hallulla','priceHallulla','Hallulla'],['marraqueta','priceMarraqueta','Marraqueta'],['ciabatta','priceCiabatta','Ciabatta'],['medioBaguette','priceMedioBaguette','Medio baguette'],['panCompleto','pricePanCompleto','Pan completo']];
           const missing=lines.filter(([k,p])=>Number(obj[k]||0)>0&&Number(client?.[p]||0)<=0).map(([, ,label])=>label);
           if(missing.length)throw new Error(`Falta precio configurado para ${missing.join(', ')}. No se guardó la guía.`);
-          const total=Math.round(lines.reduce((s,[k,p])=>s+(Number(obj[k]||0)*Number(client?.[p]||0)),0));
+          const total=Math.round(lines.reduce((s,[k,p])=>s+(Number(obj[k]||0)*Math.round(Number(client?.[p]||0)*1.19)),0));
           const gid=`order-guide-${orderId}`;
           const oldGuide=(db.guides||[]).find(g=>g.id===gid);
           const paid=Math.min(Number(oldGuide?.paid||0),total);
