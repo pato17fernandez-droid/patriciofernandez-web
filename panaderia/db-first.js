@@ -4,8 +4,6 @@
   const nativeFetch=window.fetch.bind(window);
   window.__panaderiaNativeFetch=nativeFetch;
 
-  // Bloquea la sincronización antigua que reemplazaba toda la base de datos.
-  // Las escrituras nuevas se hacen fila por fila mediante ENTITY_API.
   window.fetch=(input,init={})=>{
     const url=typeof input==='string'?input:(input?.url||'');
     const method=String(init?.method||'GET').toUpperCase();
@@ -48,6 +46,21 @@
         if(typeof toast==='function')toast('Cliente guardado en D1');
       }
 
+      else if(currentAction==='order'){
+        const totalKg=Number(v.hallulla||0)+Number(v.marraqueta||0)+Number(v.ciabatta||0)+Number(v.medioBaguette||0)+Number(v.panCompleto||0);
+        if(totalKg<=0)throw new Error('Ingresa al menos un tipo de pan');
+        const obj={
+          id:currentEditId?Number(currentEditId):Date.now(),clientId:v.clientId,
+          hallulla:Number(v.hallulla||0),marraqueta:Number(v.marraqueta||0),ciabatta:Number(v.ciabatta||0),
+          medioBaguette:Number(v.medioBaguette||0),panCompleto:Number(v.panCompleto||0),
+          date:v.date,status:v.status||'Pendiente',notes:v.notes||''
+        };
+        await post('order',obj);
+        db.orders=db.orders||[];
+        db.orders=currentEditId?db.orders.map(x=>String(x.id)===String(currentEditId)?obj:x):[obj,...db.orders];
+        if(typeof toast==='function')toast('Pedido guardado en D1');
+      }
+
       else if(currentAction==='guide'){
         const old=currentEditId?(db.guides||[]).find(x=>x.id===currentEditId):null;
         const total=Number(v.total||0),paid=Math.min(Number(old?.paid||0),total);
@@ -86,6 +99,7 @@
       else return;
 
       persistLocal(); closeModal();
+      try{window.renderDispatch?.();}catch{}
     }catch(err){fail(err)}finally{if(btn){btn.disabled=false;btn.textContent='Guardar';}}
   }
 
