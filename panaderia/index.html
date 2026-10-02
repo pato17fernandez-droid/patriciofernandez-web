@@ -6,7 +6,7 @@
   <title>Sistema de Gestión | Panadería</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="styles.css?v=20261002-2158">
+  <link rel="stylesheet" href="styles.css?v=20261002-2203">
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -49,94 +49,30 @@
         <div class="user-block"><div><strong>Administrador</strong><small>Sistema interno</small></div><span>PF</span></div>
       </header>
 
-      <section id="section-dashboard" class="app-section active-section">
-        <div id="dashboardStats" class="stats-grid"></div>
-        <div class="card-panel"><div class="panel-head"><div><h2>Acciones rápidas</h2><p>Funciones de uso frecuente</p></div></div><div class="quick-grid">
-          <button class="quick-btn" data-action="new-order"><i class="bi bi-plus-circle"></i>Nuevo pedido</button>
-          <button class="quick-btn" data-action="new-client"><i class="bi bi-person-plus"></i>Nuevo cliente</button>
-          <button class="quick-btn" data-action="new-guide"><i class="bi bi-file-earmark-plus"></i>Nueva guía</button>
-          <button class="quick-btn" data-action="new-payment"><i class="bi bi-cash-coin"></i>Registrar pago</button>
-        </div></div>
-        <div class="two-col">
-          <div class="card-panel"><div class="panel-head"><div><h2>Pedidos recientes</h2><p>Últimos pedidos registrados</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Kg</th><th>Entrega</th><th>Estado</th></tr></thead><tbody id="dashboardOrders"></tbody></table></div></div>
-          <div class="card-panel"><div class="panel-head"><div><h2>Alertas</h2><p>Situaciones que requieren atención</p></div></div><div id="dashboardAlerts" class="alerts-list"></div></div>
-        </div>
-      </section>
-
-      <section id="section-clientes" class="app-section">
-        <div class="section-toolbar"><div class="search-control"><i class="bi bi-search"></i><input id="clientSearch" placeholder="Buscar cliente, RUT o comuna"></div><button class="primary-btn" data-action="new-client"><i class="bi bi-person-plus"></i>Nuevo cliente</button></div>
-        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>RUT</th><th>Comuna</th><th>Ruta</th><th>Horno</th><th>Saldo guías</th><th>Bandejas</th><th></th></tr></thead><tbody id="clientsTable"></tbody></table></div></div>
-      </section>
-
-      <section id="section-pedidos" class="app-section">
-        <div class="section-toolbar"><div class="filter-row"><div class="search-control"><i class="bi bi-search"></i><input id="orderSearch" placeholder="Buscar cliente"></div><select id="orderStatusFilter" class="form-select compact-select"><option value="">Todos los estados</option><option>Pendiente</option><option>En producción</option><option>Preparado</option><option>Despachado</option><option>Entregado</option></select></div><button class="primary-btn" data-action="new-order"><i class="bi bi-plus-circle"></i>Nuevo pedido</button></div>
-        <div id="orderStats" class="mini-stats"></div>
-        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Cliente</th><th>Productos</th><th>Kg</th><th>Entrega</th><th>Estado</th><th></th></tr></thead><tbody id="ordersTable"></tbody></table></div></div>
-      </section>
-
-      <section id="section-despachos" class="app-section">
-        <div class="section-toolbar"><div><h2 class="section-inline-title">Control de despachos</h2><p class="muted mb-0">Pedidos preparados, despachados y entregados</p></div></div>
-        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Cliente</th><th>Kg</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="dispatchTable"></tbody></table></div></div>
-      </section>
-
-      <section id="section-guias" class="app-section">
-        <div class="section-toolbar"><div class="filter-row"><div class="search-control"><i class="bi bi-search"></i><input id="guideSearch" placeholder="Buscar N° o cliente"></div><select id="guideStatusFilter" class="form-select compact-select"><option value="">Todos los estados</option><option>Pendiente</option><option>Parcial</option><option>Pagada</option></select></div><button class="primary-btn" data-action="new-guide"><i class="bi bi-file-earmark-plus"></i>Nueva guía</button></div>
-        <div id="guideStats" class="mini-stats"></div>
-        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>N° Guía</th><th>Cliente</th><th>Fecha</th><th>Kg</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="guidesTable"></tbody></table></div></div>
-      </section>
-
-      <section id="section-pagos" class="app-section">
-        <div class="section-toolbar"><div><h2 class="section-inline-title">Registro de pagos</h2><p class="muted mb-0">Abonos y pagos asociados a guías de despacho</p></div><button class="primary-btn" data-action="new-payment"><i class="bi bi-cash-coin"></i>Registrar pago</button></div>
-        <div id="paymentStats" class="mini-stats"></div>
-        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Guía</th><th>Monto</th><th>Medio</th><th>Observación</th></tr></thead><tbody id="paymentsTable"></tbody></table></div></div>
-      </section>
-
-      <section id="section-bandejas" class="app-section">
-        <div class="section-toolbar"><div><h2 class="section-inline-title">Control de bandejas</h2><p class="muted mb-0">Entregas, devoluciones y saldo por cliente</p></div><button class="primary-btn" data-action="new-tray"><i class="bi bi-plus-circle"></i>Registrar movimiento</button></div>
-        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Entregadas</th><th>Devueltas</th><th>Saldo</th><th>Último movimiento</th><th></th></tr></thead><tbody id="traysTable"></tbody></table></div></div>
-      </section>
-
-      <section id="section-hornos" class="app-section">
-        <div class="section-toolbar"><div><h2 class="section-inline-title">Hornos en comodato</h2><p class="muted mb-0">Registro de equipos instalados en clientes</p></div><button class="primary-btn" data-action="new-oven"><i class="bi bi-fire"></i>Registrar horno</button></div>
-        <div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Modelo</th><th>Instalación</th><th>Estado</th><th>Observaciones</th><th></th></tr></thead><tbody id="ovensTable"></tbody></table></div></div>
-      </section>
-
-      <section id="section-informes" class="app-section">
-        <div id="reportCards" class="stats-grid"></div>
-        <div class="two-col">
-          <div class="card-panel"><div class="panel-head"><div><h2>Kg por cliente</h2><p>Acumulado del período</p></div></div><div id="reportClientKg"></div></div>
-          <div class="card-panel"><div class="panel-head"><div><h2>Cuentas por cobrar</h2><p>Saldo pendiente por cliente</p></div></div><div id="reportReceivables"></div></div>
-        </div>
-      </section>
-
-      <section id="section-configuracion" class="app-section">
-        <div class="card-panel settings-panel">
-          <h2>Configuración</h2>
-          <p class="muted">Los registros se almacenan en Cloudflare D1 y se sincronizan entre los equipos que utilicen el sistema.</p>
-          <div class="settings-actions">
-            <button id="exportBtn" class="secondary-btn"><i class="bi bi-download"></i>Exportar respaldo JSON</button>
-            <button id="resetBtn" class="danger-btn"><i class="bi bi-trash"></i>Borrar todos los registros</button>
-          </div>
-          <hr>
-          <div class="alert alert-info mb-0">Base de datos conectada mediante el binding D1 <strong>DB</strong>.</div>
-        </div>
-      </section>
+      <section id="section-dashboard" class="app-section active-section"><div id="dashboardStats" class="stats-grid"></div><div class="card-panel"><div class="panel-head"><div><h2>Acciones rápidas</h2><p>Funciones de uso frecuente</p></div></div><div class="quick-grid"><button class="quick-btn" data-action="new-order"><i class="bi bi-plus-circle"></i>Nuevo pedido</button><button class="quick-btn" data-action="new-client"><i class="bi bi-person-plus"></i>Nuevo cliente</button><button class="quick-btn" data-action="new-guide"><i class="bi bi-file-earmark-plus"></i>Nueva guía</button><button class="quick-btn" data-action="new-payment"><i class="bi bi-cash-coin"></i>Registrar pago</button></div></div><div class="two-col"><div class="card-panel"><div class="panel-head"><div><h2>Pedidos recientes</h2><p>Últimos pedidos registrados</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Kg</th><th>Entrega</th><th>Estado</th></tr></thead><tbody id="dashboardOrders"></tbody></table></div></div><div class="card-panel"><div class="panel-head"><div><h2>Alertas</h2><p>Situaciones que requieren atención</p></div></div><div id="dashboardAlerts" class="alerts-list"></div></div></div></section>
+      <section id="section-clientes" class="app-section"><div class="section-toolbar"><div class="search-control"><i class="bi bi-search"></i><input id="clientSearch" placeholder="Buscar cliente, RUT o comuna"></div><button class="primary-btn" data-action="new-client"><i class="bi bi-person-plus"></i>Nuevo cliente</button></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>RUT</th><th>Comuna</th><th>Ruta</th><th>Horno</th><th>Saldo guías</th><th>Bandejas</th><th></th></tr></thead><tbody id="clientsTable"></tbody></table></div></div></section>
+      <section id="section-pedidos" class="app-section"><div class="section-toolbar"><div class="filter-row"><div class="search-control"><i class="bi bi-search"></i><input id="orderSearch" placeholder="Buscar cliente"></div><select id="orderStatusFilter" class="form-select compact-select"><option value="">Todos los estados</option><option>Pendiente</option><option>En producción</option><option>Preparado</option><option>Despachado</option><option>Entregado</option></select></div><button class="primary-btn" data-action="new-order"><i class="bi bi-plus-circle"></i>Nuevo pedido</button></div><div id="orderStats" class="mini-stats"></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Cliente</th><th>Productos</th><th>Kg</th><th>Entrega</th><th>Estado</th><th></th></tr></thead><tbody id="ordersTable"></tbody></table></div></div></section>
+      <section id="section-despachos" class="app-section"><div class="section-toolbar"><div><h2 class="section-inline-title">Control de despachos</h2><p class="muted mb-0">Pedidos preparados, despachados y entregados</p></div></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Cliente</th><th>Kg</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="dispatchTable"></tbody></table></div></div></section>
+      <section id="section-guias" class="app-section"><div class="section-toolbar"><div class="filter-row"><div class="search-control"><i class="bi bi-search"></i><input id="guideSearch" placeholder="Buscar N° o cliente"></div><select id="guideStatusFilter" class="form-select compact-select"><option value="">Todos los estados</option><option>Pendiente</option><option>Parcial</option><option>Pagada</option></select></div><button class="primary-btn" data-action="new-guide"><i class="bi bi-file-earmark-plus"></i>Nueva guía</button></div><div id="guideStats" class="mini-stats"></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>N° Guía</th><th>Cliente</th><th>Fecha</th><th>Kg</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="guidesTable"></tbody></table></div></div></section>
+      <section id="section-pagos" class="app-section"><div class="section-toolbar"><div><h2 class="section-inline-title">Registro de pagos</h2><p class="muted mb-0">Abonos y pagos asociados a guías de despacho</p></div><button class="primary-btn" data-action="new-payment"><i class="bi bi-cash-coin"></i>Registrar pago</button></div><div id="paymentStats" class="mini-stats"></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Guía</th><th>Monto</th><th>Medio</th><th>Observación</th></tr></thead><tbody id="paymentsTable"></tbody></table></div></div></section>
+      <section id="section-bandejas" class="app-section"><div class="section-toolbar"><div><h2 class="section-inline-title">Control de bandejas</h2><p class="muted mb-0">Entregas, devoluciones y saldo por cliente</p></div><button class="primary-btn" data-action="new-tray"><i class="bi bi-plus-circle"></i>Registrar movimiento</button></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Entregadas</th><th>Devueltas</th><th>Saldo</th><th>Último movimiento</th><th></th></tr></thead><tbody id="traysTable"></tbody></table></div></div></section>
+      <section id="section-hornos" class="app-section"><div class="section-toolbar"><div><h2 class="section-inline-title">Hornos en comodato</h2><p class="muted mb-0">Registro de equipos instalados en clientes</p></div><button class="primary-btn" data-action="new-oven"><i class="bi bi-fire"></i>Registrar horno</button></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Modelo</th><th>Instalación</th><th>Estado</th><th>Observaciones</th><th></th></tr></thead><tbody id="ovensTable"></tbody></table></div></div></section>
+      <section id="section-informes" class="app-section"><div id="reportCards" class="stats-grid"></div><div class="two-col"><div class="card-panel"><div class="panel-head"><div><h2>Kg por cliente</h2><p>Acumulado del período</p></div></div><div id="reportClientKg"></div></div><div class="card-panel"><div class="panel-head"><div><h2>Cuentas por cobrar</h2><p>Saldo pendiente por cliente</p></div></div><div id="reportReceivables"></div></div></div></section>
+      <section id="section-configuracion" class="app-section"><div class="card-panel settings-panel"><h2>Configuración</h2><p class="muted">Los registros se almacenan en Cloudflare D1 y se sincronizan entre los equipos que utilicen el sistema.</p><div class="settings-actions"><button id="exportBtn" class="secondary-btn"><i class="bi bi-download"></i>Exportar respaldo JSON</button><button id="resetBtn" class="danger-btn"><i class="bi bi-trash"></i>Borrar todos los registros</button></div><hr><div class="alert alert-info mb-0">Base de datos conectada mediante el binding D1 <strong>DB</strong>.</div></div></section>
     </main>
   </div>
 
-  <div class="modal fade" id="entityModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><form id="entityForm"><div class="modal-header"><div><h5 id="modalTitle" class="modal-title">Registro</h5><small id="modalSubtitle" class="muted"></small></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div id="modalBody" class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button id="modalSubmit" type="submit" class="btn btn-warning fw-bold">Guardar</button></div></form></div></div>
-  </div>
+  <div class="modal fade" id="entityModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><form id="entityForm"><div class="modal-header"><div><h5 id="modalTitle" class="modal-title">Registro</h5><small id="modalSubtitle" class="muted"></small></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div id="modalBody" class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button id="modalSubmit" type="submit" class="btn btn-warning fw-bold">Guardar</button></div></form></div></div></div>
   <div id="toastBox" class="toast-box"></div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="app.js?v=20261002-2158"></script>
-  <script src="db-sync.js?v=20261002-2158"></script>
-  <script src="operacion.js?v=20261002-2158"></script>
-  <script src="pagos-ui.js?v=20261002-2158"></script>
-  <script src="db-first.js?v=20261002-2158"></script>
-  <script src="guias-mes-fix.js?v=20261002-2158"></script>
-  <script src="nav-state.js?v=20261002-2158"></script>
-  <script src="dispatch-ui.js?v=20261002-2158"></script>
-  <script src="month-control.js?v=20261002-2158"></script>
+  <script src="app.js?v=20261002-2203"></script>
+  <script src="db-sync.js?v=20261002-2203"></script>
+  <script src="operacion.js?v=20261002-2203"></script>
+  <script src="pagos-ui.js?v=20261002-2203"></script>
+  <script src="db-first.js?v=20261002-2203"></script>
+  <script src="guias-mes-fix.js?v=20261002-2203"></script>
+  <script src="nav-state.js?v=20261002-2203"></script>
+  <script src="dispatch-ui.js?v=20261002-2203"></script>
+  <script src="month-control.js?v=20261002-2203"></script>
 </body>
 </html>
