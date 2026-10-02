@@ -17,6 +17,7 @@
     try{if(typeof renderPayments==='function')renderPayments()}catch(e){console.warn(e)}
     try{if(typeof renderDashboard==='function')renderDashboard()}catch(e){console.warn(e)}
     try{if(typeof renderClients==='function')renderClients()}catch(e){console.warn(e)}
+    try{if(typeof renderDispatch==='function')renderDispatch()}catch(e){console.warn(e)}
   }
 
   function setMonth(month,{syncReports=true}={}){
