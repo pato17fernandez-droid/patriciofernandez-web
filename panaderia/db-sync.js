@@ -166,20 +166,30 @@
 
   function normalizeSeptemberHistory(rows){
     return (rows||[]).map(r=>{
-      if(r.clientId==='cli-el-laurel') return {...r,guide:'',paid:false};
       if(String(r.date||'').slice(0,7)!=='2026-09') return r;
+      if(r.clientId==='cli-el-laurel') return r;
       return {...r,paid:!SEP_PENDING_GUIDES.has(r.id)};
     });
   }
 
   function normalizeSeptemberGuides(guides){
-    return (guides||[])
-      .filter(g=>g.clientId!=='cli-el-laurel')
-      .map(g=>{
-        if(String(g.date||'').slice(0,7)!=='2026-09') return g;
-        const pending=SEP_PENDING_GUIDES.has(g.id);
-        return {...g,paid:pending?0:Number(g.total||0),status:pending?'Pendiente':'Pagada'};
-      });
+    return (guides||[]).map(g=>{
+      if(String(g.date||'').slice(0,7)!=='2026-09') return g;
+      if(g.clientId==='cli-el-laurel') return g;
+      const pending=SEP_PENDING_GUIDES.has(g.id);
+      return {...g,paid:pending?0:Number(g.total||0),status:pending?'Pendiente':'Pagada'};
+    });
+  }
+
+  function overlayHistoryGuideStatus(){
+    const byId=new Map((db.guides||[]).map(g=>[g.id,g]));
+    panHistory=panHistory.map(r=>{
+      if(!r.guide)return r;
+      const g=byId.get(r.id);
+      if(!g)return r;
+      return {...r,paid:Number(g.paid||0)>=Number(g.total||0)&&Number(g.total||0)>0};
+    });
+    window.panHistorial=panHistory;
   }
 
   async function loadHistory(){
@@ -204,7 +214,7 @@
       if(data&&Array.isArray(data.clients)){
         data.guides=normalizeSeptemberGuides(data.guides);
         localStorage.setItem(LOCAL_KEY,JSON.stringify(data));
-        db=data; remoteReady=true; renderAll(); renderHistoricalReports();
+        db=data; overlayHistoryGuideStatus(); remoteReady=true; renderAll(); renderHistoricalReports();
         console.info('Panadería: datos operativos cargados desde Cloudflare D1');
       }
     }catch(e){console.warn('Panadería: no se pudo cargar D1, se mantiene copia local.',e)}
