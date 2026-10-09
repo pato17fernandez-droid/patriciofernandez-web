@@ -105,8 +105,8 @@
     const totalKg=Object.values(products).reduce((a,b)=>a+b,0);
     const guideRows=rows.filter(r=>r.guide);
     const amount=guideRows.reduce((s,r)=>s+Number(r.amount||0),0);
-    const paidAmount=guideRows.filter(r=>r.paid).reduce((s,r)=>s+Number(r.amount||0),0);
-    const pendingAmount=Math.max(0,amount-paidAmount);
+    const pendingAmount=guideRows.reduce((s,r)=>s+(r.paid?0:Number(r.pendingAmount??r.amount||0)),0);
+    const paidAmount=Math.max(0,amount-pendingAmount);
     const label=reportMode==='month'?monthName(reportMonth):`${fmtDateLocal(from)} al ${fmtDateLocal(to)}`;
 
     el('reportCards').innerHTML=
@@ -141,9 +141,50 @@
     const debts=new Map();
     guideRows.filter(r=>!r.paid&&Number(r.amount||0)>0).forEach(r=>{
       const name=r.clientName||getClient?.(r.clientId)?.name||'Cliente';
-      debts.set(name,(debts.get(name)||0)+Number(r.amount||0));
+      debts.set(name,(debts.get(name)||0)+Number(r.pendingAmount??r.amount||0));
     });
     el('reportReceivables').innerHTML=debts.size?[...debts.entries()].sort((a,b)=>b[1]-a[1]).map(([name,balance])=>`<div class="report-row-head py-2 border-bottom"><span>${escLocal(name)}</span><strong class="money-pending">${clp(balance)}</strong></div>`).join(''):'<p class="text-muted">No hay saldos pendientes en el período.</p>';
+  }
+
+  const SEP_UNPAID_IDS=new Set([
+    'hist-2026-09-07-cli-don-juan-melipeuco-1',
+    'hist-2026-09-17-cli-don-juan-melipeuco-1641',
+    'hist-2026-09-25-cli-el-refugio-1688',
+    'hist-2026-09-28-cli-el-refugio-1718',
+    'hist-2026-09-28-cli-km-06-1708',
+    'hist-2026-09-25-cli-maria-flores-1695',
+    'hist-2026-09-26-cli-maria-flores-cunco-1707',
+    'hist-2026-09-16-cli-hernan-astorga-pucon-1614',
+    'hist-2026-09-28-cli-hernan-astorga-pucon-1709',
+    'hist-2026-09-30-cli-fredy-1734',
+    'hist-2026-09-29-cli-tote-1723',
+    'hist-2026-09-17-cli-el-huerto-jaramillo-1630',
+    'hist-2026-09-22-cli-el-huerto-jaramillo-1658',
+    'hist-2026-09-29-cli-el-huerto-jaramillo-1726'
+  ]);
+  const SEP_PARTIAL_ID='hist-2026-09-17-cli-el-huerto-jaramillo-1630';
+
+  function correctSeptemberHistory(rows){
+    return (rows||[]).map(r=>{
+      if(String(r.date||'').slice(0,7)!=='2026-09')return r;
+      if(r.clientId==='cli-el-laurel')return {...r,guide:''};
+      const paid=!SEP_UNPAID_IDS.has(r.id);
+      return {...r,paid,pendingAmount:r.id===SEP_PARTIAL_ID?5186:(paid?0:Number(r.amount||0))};
+    });
+  }
+
+  function correctSeptemberGuides(guides){
+    return (guides||[]).filter(g=>!(String(g.date||'').slice(0,7)==='2026-09'&&g.clientId==='cli-el-laurel')).map(g=>{
+      if(String(g.date||'').slice(0,7)!=='2026-09')return g;
+      if(SEP_UNPAID_IDS.has(g.id)){
+        if(g.id===SEP_PARTIAL_ID){
+          const total=Number(g.total||0);
+          return {...g,paid:Math.max(0,total-5186),status:'Parcial'};
+        }
+        return {...g,paid:0,status:'Pendiente'};
+      }
+      return {...g,paid:Number(g.total||0),status:'Pagada'};
+    });
   }
 
   async function loadHistory(){
@@ -151,7 +192,7 @@
       const r=await fetch(HISTORY_API,{cache:'no-store'});
       if(!r.ok)throw new Error(`HTTP ${r.status}`);
       const data=await r.json();
-      panHistory=Array.isArray(data.history)?data.history:[];
+      panHistory=correctSeptemberHistory(Array.isArray(data.history)?data.history:[]);
       window.panHistorial=panHistory;
       historyReady=true;
       refreshMonthOptions();
@@ -166,6 +207,7 @@
       if(!r.ok)throw new Error(`HTTP ${r.status}`);
       const data=await r.json();
       if(data&&Array.isArray(data.clients)){
+        data.guides=correctSeptemberGuides(data.guides);
         localStorage.setItem(LOCAL_KEY,JSON.stringify(data));
         db=data; remoteReady=true; renderAll(); renderHistoricalReports();
         console.info('Panadería: datos operativos cargados desde Cloudflare D1');
