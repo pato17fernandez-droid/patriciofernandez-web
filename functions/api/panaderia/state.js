@@ -5,6 +5,30 @@ import { seedOct } from './seed-oct.js';
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
 
+const SEP_PENDING_GUIDES=new Set([
+  'hist-2026-09-17-cli-don-juan-melipeuco-1641',
+  'hist-2026-09-17-cli-el-huerto-jaramillo-1630',
+  'hist-2026-09-22-cli-el-huerto-jaramillo-1658',
+  'hist-2026-09-29-cli-el-huerto-jaramillo-1726',
+  'hist-2026-09-25-cli-el-refugio-1688',
+  'hist-2026-09-28-cli-el-refugio-1718',
+  'hist-2026-09-30-cli-fredy-1734',
+  'hist-2026-09-16-cli-hernan-astorga-pucon-1614',
+  'hist-2026-09-28-cli-hernan-astorga-pucon-1709',
+  'hist-2026-09-28-cli-km-06-1708',
+  'hist-2026-09-25-cli-maria-flores-1695',
+  'hist-2026-09-26-cli-maria-flores-cunco-1707',
+  'hist-2026-09-29-cli-rustico-1728',
+  'hist-2026-09-29-cli-tote-1723'
+]);
+
+function normalizeGuide(x){
+  const sep=String(x.fecha||'').slice(0,7)==='2026-09';
+  if(!sep)return {id:x.id,number:x.numero,clientId:x.cliente_id,date:x.fecha,kg:x.kilos,total:x.total,paid:x.pagado,status:x.estado,notes:x.observaciones};
+  const pending=SEP_PENDING_GUIDES.has(x.id);
+  return {id:x.id,number:x.numero,clientId:x.cliente_id,date:x.fecha,kg:x.kilos,total:x.total,paid:pending?0:Number(x.total||0),status:pending?'Pendiente':'Pagada',notes:x.observaciones};
+}
+
 async function addColumn(DB,table,def){
   const name=def.trim().split(/\s+/)[0];
   const info=await DB.prepare(`PRAGMA table_info(${table})`).all();
@@ -78,7 +102,7 @@ export async function onRequestGet({env}){
     return json({
       clients:(c.results||[]).map(x=>({id:x.id,name:x.nombre,rut:x.rut,business:x.giro,address:x.direccion,commune:x.comuna,phone:x.telefono,contact:x.contacto,route:x.ruta,zone:x.zona,priceHallulla:x.precio_hallulla,priceMarraqueta:x.precio_marraqueta,priceCiabatta:x.precio_ciabatta,priceMedioBaguette:x.precio_medio_baguette||0,pricePanCompleto:x.precio_pan_completo||0,oven:!!x.horno,active:!!x.activo})),
       orders:(o.results||[]).map(x=>({id:x.id,clientId:x.cliente_id,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette||0,panCompleto:x.pan_completo||0,date:x.fecha_entrega,status:x.estado,notes:x.observaciones})),
-      guides:(g.results||[]).map(x=>({id:x.id,number:x.numero,clientId:x.cliente_id,date:x.fecha,kg:x.kilos,total:x.total,paid:x.pagado,status:x.estado,notes:x.observaciones})),
+      guides:(g.results||[]).filter(x=>!(String(x.fecha||'').slice(0,7)==='2026-09'&&x.cliente_id==='cli-el-laurel')).map(normalizeGuide),
       payments:(p.results||[]).map(x=>({id:x.id,guideId:x.guia_id,clientId:x.cliente_id,date:x.fecha,amount:x.monto,method:x.medio,notes:x.observaciones})),
       trays:(t.results||[]).map(x=>({clientId:x.cliente_id,delivered:x.entregadas,returned:x.devueltas,last:x.ultimo_movimiento})),
       ovens:(h.results||[]).map(x=>({id:x.id,clientId:x.cliente_id,model:x.modelo,installed:x.fecha_instalacion,status:x.estado,notes:x.observaciones}))
