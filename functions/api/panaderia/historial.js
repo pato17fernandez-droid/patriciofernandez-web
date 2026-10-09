@@ -149,7 +149,7 @@ export async function onRequestGet({env}){
     const r=await env.DB.prepare(`SELECT h.*,c.nombre AS cliente_nombre FROM pan_historial h LEFT JOIN pan_clientes c ON c.id=h.cliente_id ORDER BY h.fecha DESC,h.cliente_id`).all();
     return json({history:(r.results||[]).map(x=>{
       const sep=String(x.fecha||'').slice(0,7)==='2026-09';
-      const isLaurel=sep&&x.cliente_id==='cli-el-laurel';
+      const isLaurel=x.cliente_id==='cli-el-laurel';
       const paid=sep?!SEP_PENDING_HISTORY.has(x.id):!!x.pagado;
       return {id:x.id,clientId:x.cliente_id,clientName:x.cliente_nombre||'',date:x.fecha,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette,panCompleto:x.pan_completo,guide:isLaurel?'':x.numero_guia,amount:x.monto_guia,paid:isLaurel?false:paid};
     })});
