@@ -142,10 +142,20 @@ async function syncLatestExcel(DB){
   await DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('excel_actualizado_2026_10_09_v1','ok')").run();
 }
 
+
+async function syncOctoberHistory20261009(DB){
+  const done=await DB.prepare("SELECT valor FROM pan_meta WHERE clave='octubre_historial_2026_10_09_v2'").first();
+  if(done)return;
+  await DB.prepare("DELETE FROM pan_historial WHERE fecha LIKE '2026-10-%'").run();
+  const stmts=seedOct.map((r,i)=>rowStatement(DB,r,i)).filter(Boolean);
+  for(let i=0;i<stmts.length;i+=75)await DB.batch(stmts.slice(i,i+75));
+  await DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('octubre_historial_2026_10_09_v2','ok')").run();
+}
+
 export async function onRequestGet({env}){
   try{
     if(!env.DB)return json({error:'Binding D1 DB no configurado'},500);
-    await ensureSchema(env.DB);await syncClients(env.DB);await seedBase(env.DB);await syncLatestExcel(env.DB);
+    await ensureSchema(env.DB);await syncClients(env.DB);await seedBase(env.DB);await syncLatestExcel(env.DB);await syncOctoberHistory20261009(env.DB);
     const r=await env.DB.prepare(`SELECT h.*,c.nombre AS cliente_nombre FROM pan_historial h LEFT JOIN pan_clientes c ON c.id=h.cliente_id ORDER BY h.fecha DESC,h.cliente_id`).all();
     return json({history:(r.results||[]).map(x=>{
       const sep=String(x.fecha||'').slice(0,7)==='2026-09';
