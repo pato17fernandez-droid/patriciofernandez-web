@@ -105,7 +105,7 @@
     const totalKg=Object.values(products).reduce((a,b)=>a+b,0);
     const guideRows=rows.filter(r=>r.guide);
     const amount=guideRows.reduce((s,r)=>s+Number(r.amount||0),0);
-    const pendingAmount=guideRows.reduce((s,r)=>s+(r.paid?0:Number(r.pendingAmount??r.amount||0)),0);
+    const pendingAmount=guideRows.reduce((s,r)=>s+(r.paid?0:Number(r.pendingAmount ?? r.amount ?? 0)),0);
     const paidAmount=Math.max(0,amount-pendingAmount);
     const label=reportMode==='month'?monthName(reportMonth):`${fmtDateLocal(from)} al ${fmtDateLocal(to)}`;
 
@@ -141,7 +141,7 @@
     const debts=new Map();
     guideRows.filter(r=>!r.paid&&Number(r.amount||0)>0).forEach(r=>{
       const name=r.clientName||getClient?.(r.clientId)?.name||'Cliente';
-      debts.set(name,(debts.get(name)||0)+Number(r.pendingAmount??r.amount||0));
+      debts.set(name,(debts.get(name)||0)+Number(r.pendingAmount ?? r.amount ?? 0));
     });
     el('reportReceivables').innerHTML=debts.size?[...debts.entries()].sort((a,b)=>b[1]-a[1]).map(([name,balance])=>`<div class="report-row-head py-2 border-bottom"><span>${escLocal(name)}</span><strong class="money-pending">${clp(balance)}</strong></div>`).join(''):'<p class="text-muted">No hay saldos pendientes en el período.</p>';
   }
