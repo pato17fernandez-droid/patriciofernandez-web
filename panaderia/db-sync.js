@@ -192,12 +192,36 @@
     window.panHistorial=panHistory;
   }
 
+  function applyStaticOctoberHistory(rows){
+    const pack=window.PANADERIA_OCT_2026;
+    if(!pack?.history?.length)return rows||[];
+    const base=(rows||[]).filter(r=>String(r.date||'').slice(0,7)!=='2026-10');
+    return [...base,...pack.history].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  }
+
+  function applyStaticOctoberGuides(guides){
+    const pack=window.PANADERIA_OCT_2026;
+    if(!pack?.guides?.length)return guides||[];
+    const current=guides||[];
+    const existing=new Map(current.map(g=>[g.id,g]));
+    const base=current.filter(g=>String(g.date||'').slice(0,7)!=='2026-10' || !String(g.id||'').startsWith('hist-'));
+    const merged=[...base];
+    pack.guides.forEach(seed=>{
+      const old=existing.get(seed.id);
+      const paidOld=Number(old?.paid||0);
+      merged.push(paidOld>Number(seed.paid||0)
+        ? {...seed,paid:paidOld,status:paidOld>=Number(seed.total||0)?'Pagada':'Parcial'}
+        : {...seed});
+    });
+    return merged;
+  }
+
   async function loadHistory(){
     try{
       const r=await fetch(HISTORY_API,{cache:'no-store'});
       if(!r.ok)throw new Error(`HTTP ${r.status}`);
       const data=await r.json();
-      panHistory=normalizeSeptemberHistory(Array.isArray(data.history)?data.history:[]);
+      panHistory=normalizeSeptemberHistory(applyStaticOctoberHistory(Array.isArray(data.history)?data.history:[]));
       window.panHistorial=panHistory;
       historyReady=true;
       refreshMonthOptions();
@@ -212,7 +236,7 @@
       if(!r.ok)throw new Error(`HTTP ${r.status}`);
       const data=await r.json();
       if(data&&Array.isArray(data.clients)){
-        data.guides=normalizeSeptemberGuides(data.guides);
+        data.guides=normalizeSeptemberGuides(applyStaticOctoberGuides(data.guides));
         localStorage.setItem(LOCAL_KEY,JSON.stringify(data));
         db=data; overlayHistoryGuideStatus(); remoteReady=true; renderAll(); renderHistoricalReports();
         console.info('Panadería: datos operativos cargados desde Cloudflare D1');
