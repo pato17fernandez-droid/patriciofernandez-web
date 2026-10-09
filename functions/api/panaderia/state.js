@@ -90,12 +90,37 @@ async function seedHistorical(DB){
   await DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('historico_excel_2026_09_10','ok')").run();
 }
 
+
+async function syncOctoberExcel20261009(DB){
+  const done=await DB.prepare("SELECT valor FROM pan_meta WHERE clave='octubre_excel_2026_10_09_v2'").first();
+  if(done)return;
+  await DB.prepare("DELETE FROM pan_guias WHERE fecha LIKE '2026-10-%' AND observaciones='Importado desde Excel histórico'").run();
+  const stmts=[];
+  seedOct.forEach(r=>{
+    const [date,ci,h,m,c,b,p,guide,amount,paidFlag]=r;
+    const cl=seedClients[ci];
+    if(!guide||!cl)return;
+    const clientId=cl[0];
+    const gid=`hist-${date}-${clientId}-${guide}`;
+    const kilos=Number(h||0)+Number(m||0)+Number(c||0)+Number(b||0)+Number(p||0);
+    const total=Number(amount||0);
+    const paid=paidFlag?total:0;
+    stmts.push(DB.prepare(`INSERT OR REPLACE INTO pan_guias
+      (id,numero,cliente_id,fecha,kilos,total,pagado,estado,observaciones)
+      VALUES (?,?,?,?,?,?,?,?,?)`).bind(
+        gid,String(guide),clientId,date,kilos,total,paid,paidFlag?'Pagada':'Pendiente','Importado desde Excel histórico'
+      ));
+  });
+  for(let i=0;i<stmts.length;i+=75)await DB.batch(stmts.slice(i,i+75));
+  await DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('octubre_excel_2026_10_09_v2','ok')").run();
+}
+
 function normalize(body){const arr=k=>Array.isArray(body?.[k])?body[k]:[];return{clients:arr('clients'),orders:arr('orders'),guides:arr('guides'),payments:arr('payments'),trays:arr('trays'),ovens:arr('ovens')}}
 
 export async function onRequestGet({env}){
   try{
     if(!env.DB)return json({error:'Binding D1 DB no configurado'},500);
-    await ensureSchema(env.DB);await seedHistorical(env.DB);await syncSeedClients(env.DB);
+    await ensureSchema(env.DB);await seedHistorical(env.DB);await syncSeedClients(env.DB);await syncOctoberExcel20261009(env.DB);
     const [c,o,g,p,t,h]=await env.DB.batch([
       env.DB.prepare('SELECT * FROM pan_clientes ORDER BY nombre'),env.DB.prepare('SELECT * FROM pan_pedidos ORDER BY fecha_entrega DESC,id DESC'),
       env.DB.prepare('SELECT * FROM pan_guias ORDER BY fecha DESC,numero DESC'),env.DB.prepare('SELECT * FROM pan_pagos ORDER BY fecha DESC,created_at DESC'),
