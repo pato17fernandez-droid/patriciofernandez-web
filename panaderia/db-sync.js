@@ -187,6 +187,41 @@
     });
   }
 
+  const SEP_PENDING_GUIDES=new Set([
+    'hist-2026-09-17-cli-don-juan-melipeuco-1641',
+    'hist-2026-09-17-cli-el-huerto-jaramillo-1630',
+    'hist-2026-09-22-cli-el-huerto-jaramillo-1658',
+    'hist-2026-09-29-cli-el-huerto-jaramillo-1726',
+    'hist-2026-09-25-cli-el-refugio-1688',
+    'hist-2026-09-28-cli-el-refugio-1718',
+    'hist-2026-09-30-cli-fredy-1734',
+    'hist-2026-09-16-cli-hernan-astorga-pucon-1614',
+    'hist-2026-09-28-cli-hernan-astorga-pucon-1709',
+    'hist-2026-09-28-cli-km-06-1708',
+    'hist-2026-09-25-cli-maria-flores-1695',
+    'hist-2026-09-26-cli-maria-flores-cunco-1707',
+    'hist-2026-09-29-cli-rustico-1728',
+    'hist-2026-09-29-cli-tote-1723'
+  ]);
+
+  function normalizeSeptemberHistory(rows){
+    return (rows||[]).map(r=>{
+      if(String(r.date||'').slice(0,7)!=='2026-09') return r;
+      if(r.clientId==='cli-el-laurel') return {...r,guide:'',paid:false};
+      return {...r,paid:!SEP_PENDING_GUIDES.has(r.id)};
+    });
+  }
+
+  function normalizeSeptemberGuides(guides){
+    return (guides||[])
+      .filter(g=>!(String(g.date||'').slice(0,7)==='2026-09' && g.clientId==='cli-el-laurel'))
+      .map(g=>{
+        if(String(g.date||'').slice(0,7)!=='2026-09') return g;
+        const pending=SEP_PENDING_GUIDES.has(g.id);
+        return {...g,paid:pending?0:Number(g.total||0),status:pending?'Pendiente':'Pagada'};
+      });
+  }
+
   async function loadHistory(){
     try{
       const r=await fetch(HISTORY_API,{cache:'no-store'});
