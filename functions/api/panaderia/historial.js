@@ -150,8 +150,8 @@ export async function onRequestGet({env}){
     return json({history:(r.results||[]).map(x=>{
       const sep=String(x.fecha||'').slice(0,7)==='2026-09';
       const isLaurel=x.cliente_id==='cli-el-laurel';
-      const paid=sep?!SEP_PENDING_HISTORY.has(x.id):!!x.pagado;
-      return {id:x.id,clientId:x.cliente_id,clientName:x.cliente_nombre||'',date:x.fecha,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette,panCompleto:x.pan_completo,guide:isLaurel?'':x.numero_guia,amount:x.monto_guia,paid:isLaurel?false:paid};
+      const paid=isLaurel?!!x.pagado:(sep?!SEP_PENDING_HISTORY.has(x.id):!!x.pagado);
+      return {id:x.id,clientId:x.cliente_id,clientName:x.cliente_nombre||'',date:x.fecha,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette,panCompleto:x.pan_completo,guide:x.numero_guia,amount:x.monto_guia,paid};
     })});
   }catch(e){return json({error:e.message||'Error historial D1'},500)}
 }
