@@ -102,7 +102,7 @@ export async function onRequestGet({env}){
     return json({
       clients:(c.results||[]).map(x=>({id:x.id,name:x.nombre,rut:x.rut,business:x.giro,address:x.direccion,commune:x.comuna,phone:x.telefono,contact:x.contacto,route:x.ruta,zone:x.zona,priceHallulla:x.precio_hallulla,priceMarraqueta:x.precio_marraqueta,priceCiabatta:x.precio_ciabatta,priceMedioBaguette:x.precio_medio_baguette||0,pricePanCompleto:x.precio_pan_completo||0,oven:!!x.horno,active:!!x.activo})),
       orders:(o.results||[]).map(x=>({id:x.id,clientId:x.cliente_id,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette||0,panCompleto:x.pan_completo||0,date:x.fecha_entrega,status:x.estado,notes:x.observaciones})),
-      guides:(g.results||[]).filter(x=>!(String(x.fecha||'').slice(0,7)==='2026-09'&&x.cliente_id==='cli-el-laurel')).map(normalizeGuide),
+      guides:(g.results||[]).filter(x=>x.cliente_id!=='cli-el-laurel').map(normalizeGuide),
       payments:(p.results||[]).map(x=>({id:x.id,guideId:x.guia_id,clientId:x.cliente_id,date:x.fecha,amount:x.monto,method:x.medio,notes:x.observaciones})),
       trays:(t.results||[]).map(x=>({clientId:x.cliente_id,delivered:x.entregadas,returned:x.devueltas,last:x.ultimo_movimiento})),
       ovens:(h.results||[]).map(x=>({id:x.id,clientId:x.cliente_id,model:x.modelo,installed:x.fecha_instalacion,status:x.estado,notes:x.observaciones}))
