@@ -157,11 +157,24 @@ export async function onRequestGet({env}){
     if(!env.DB)return json({error:'Binding D1 DB no configurado'},500);
     await ensureSchema(env.DB);await syncClients(env.DB);await seedBase(env.DB);await syncLatestExcel(env.DB);await syncOctoberHistory20261009(env.DB);
     const r=await env.DB.prepare(`SELECT h.*,c.nombre AS cliente_nombre FROM pan_historial h LEFT JOIN pan_clientes c ON c.id=h.cliente_id ORDER BY h.fecha DESC,h.cliente_id`).all();
-    return json({history:(r.results||[]).map(x=>{
+    const base=(r.results||[]).filter(x=>String(x.fecha||'').slice(0,7)!=='2026-10').map(x=>{
       const sep=String(x.fecha||'').slice(0,7)==='2026-09';
       const isLaurel=x.cliente_id==='cli-el-laurel';
       const paid=isLaurel?!!x.pagado:(sep?!SEP_PENDING_HISTORY.has(x.id):!!x.pagado);
       return {id:x.id,clientId:x.cliente_id,clientName:x.cliente_nombre||'',date:x.fecha,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette,panCompleto:x.pan_completo,guide:x.numero_guia,amount:x.monto_guia,paid};
-    })});
+    });
+    const october=seedOct.map((row,i)=>{
+      const [date,ci,h,m,c,b,p,guide,amount,paidFlag]=row;
+      const client=seedClients[ci];
+      if(!client)return null;
+      return {
+        id:`hist-${date}-${client[0]}-${guide||i}`,
+        clientId:client[0],clientName:client[1],date,
+        hallulla:Number(h||0),marraqueta:Number(m||0),ciabatta:Number(c||0),
+        medioBaguette:Number(b||0),panCompleto:Number(p||0),
+        guide:String(guide||''),amount:Number(amount||0),paid:!!paidFlag
+      };
+    }).filter(Boolean);
+    return json({history:[...base,...october].sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(a.clientName).localeCompare(String(b.clientName),'es'))});
   }catch(e){return json({error:e.message||'Error historial D1'},500)}
 }
