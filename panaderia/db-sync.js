@@ -105,15 +105,16 @@
     const totalKg=Object.values(products).reduce((a,b)=>a+b,0);
     const guideRows=rows.filter(r=>r.guide);
     const amount=guideRows.reduce((s,r)=>s+Number(r.amount||0),0);
-    const pendingAmount=guideRows.reduce((s,r)=>s+(r.paid?0:Number(r.pendingAmount ?? r.amount ?? 0)),0);
-    const paidAmount=Math.max(0,amount-pendingAmount);
+    const receivableRows=rows.filter(r=>!r.paid&&Number(r.amount||0)>0);
+    const pendingAmount=receivableRows.reduce((s,r)=>s+Number(r.pendingAmount ?? r.amount ?? 0),0);
+    const paidAmount=guideRows.filter(r=>r.paid).reduce((s,r)=>s+Number(r.amount||0),0);
     const label=reportMode==='month'?monthName(reportMonth):`${fmtDateLocal(from)} al ${fmtDateLocal(to)}`;
 
     el('reportCards').innerHTML=
       stat('bi-box-seam','Kg del período',`${fmt(totalKg)} kg`,label)+
       stat('bi-receipt','Monto guías',clp(amount),`${guideRows.length} guías`)+
       stat('bi-check-circle','Pagado',clp(paidAmount),`${guideRows.filter(r=>r.paid).length} guías pagadas`)+
-      stat('bi-exclamation-circle','Pendiente',clp(pendingAmount),`${guideRows.filter(r=>!r.paid).length} guías pendientes`);
+      stat('bi-exclamation-circle','Por cobrar',clp(pendingAmount),`${receivableRows.length} registros pendientes`);
 
     if(el('reportRangeLabel'))el('reportRangeLabel').textContent=label;
     if(el('reportProducts'))el('reportProducts').innerHTML=
@@ -126,7 +127,7 @@
       <div class="report-row-head py-2 border-bottom"><span>Guías del período</span><strong>${guideRows.length}</strong></div>
       <div class="report-row-head py-2 border-bottom"><span>Pagadas</span><strong>${guideRows.filter(r=>r.paid).length}</strong></div>
       <div class="report-row-head py-2 border-bottom"><span>Pendientes</span><strong>${guideRows.filter(r=>!r.paid).length}</strong></div>
-      <div class="report-row-head py-2"><span>Monto pendiente</span><strong class="money-pending">${clp(pendingAmount)}</strong></div>`;
+      <div class="report-row-head py-2"><span>Guías pendientes</span><strong>${guideRows.filter(r=>!r.paid).length}</strong></div>`;
 
     const map=new Map();
     rows.forEach(r=>{
@@ -139,7 +140,7 @@
     el('reportClientKg').innerHTML=byClient.length?byClient.map((x,i)=>`<div class="report-row"><div class="report-row-head"><span>${i===0?'🏆 ':''}${escLocal(x.name)}</span><strong>${fmt(x.kg)} kg</strong></div><div class="report-bar"><span style="width:${Math.round(x.kg/max*100)}%"></span></div></div>`).join(''):'<p class="text-muted">Sin kilos en este período.</p>';
 
     const debts=new Map();
-    guideRows.filter(r=>!r.paid&&Number(r.amount||0)>0).forEach(r=>{
+    rows.filter(r=>!r.paid&&Number(r.amount||0)>0).forEach(r=>{
       const name=r.clientName||getClient?.(r.clientId)?.name||'Cliente';
       debts.set(name,(debts.get(name)||0)+Number(r.pendingAmount ?? r.amount ?? 0));
     });
@@ -165,15 +166,15 @@
 
   function normalizeSeptemberHistory(rows){
     return (rows||[]).map(r=>{
-      if(String(r.date||'').slice(0,7)!=='2026-09') return r;
       if(r.clientId==='cli-el-laurel') return {...r,guide:'',paid:false};
+      if(String(r.date||'').slice(0,7)!=='2026-09') return r;
       return {...r,paid:!SEP_PENDING_GUIDES.has(r.id)};
     });
   }
 
   function normalizeSeptemberGuides(guides){
     return (guides||[])
-      .filter(g=>!(String(g.date||'').slice(0,7)==='2026-09' && g.clientId==='cli-el-laurel'))
+      .filter(g=>g.clientId!=='cli-el-laurel')
       .map(g=>{
         if(String(g.date||'').slice(0,7)!=='2026-09') return g;
         const pending=SEP_PENDING_GUIDES.has(g.id);
