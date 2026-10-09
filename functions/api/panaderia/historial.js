@@ -5,6 +5,23 @@ import { seedOct } from './seed-oct.js';
 
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
 
+const SEP_PENDING_HISTORY=new Set([
+  'hist-2026-09-17-cli-don-juan-melipeuco-1641',
+  'hist-2026-09-17-cli-el-huerto-jaramillo-1630',
+  'hist-2026-09-22-cli-el-huerto-jaramillo-1658',
+  'hist-2026-09-29-cli-el-huerto-jaramillo-1726',
+  'hist-2026-09-25-cli-el-refugio-1688',
+  'hist-2026-09-28-cli-el-refugio-1718',
+  'hist-2026-09-30-cli-fredy-1734',
+  'hist-2026-09-16-cli-hernan-astorga-pucon-1614',
+  'hist-2026-09-28-cli-hernan-astorga-pucon-1709',
+  'hist-2026-09-28-cli-km-06-1708',
+  'hist-2026-09-25-cli-maria-flores-1695',
+  'hist-2026-09-26-cli-maria-flores-cunco-1707',
+  'hist-2026-09-29-cli-rustico-1728',
+  'hist-2026-09-29-cli-tote-1723'
+]);
+
 async function ensureSchema(DB){
   await DB.batch([
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_clientes (
@@ -130,6 +147,11 @@ export async function onRequestGet({env}){
     if(!env.DB)return json({error:'Binding D1 DB no configurado'},500);
     await ensureSchema(env.DB);await syncClients(env.DB);await seedBase(env.DB);await syncLatestExcel(env.DB);
     const r=await env.DB.prepare(`SELECT h.*,c.nombre AS cliente_nombre FROM pan_historial h LEFT JOIN pan_clientes c ON c.id=h.cliente_id ORDER BY h.fecha DESC,h.cliente_id`).all();
-    return json({history:(r.results||[]).map(x=>({id:x.id,clientId:x.cliente_id,clientName:x.cliente_nombre||'',date:x.fecha,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette,panCompleto:x.pan_completo,guide:x.numero_guia,amount:x.monto_guia,paid:!!x.pagado}))});
+    return json({history:(r.results||[]).map(x=>{
+      const sep=String(x.fecha||'').slice(0,7)==='2026-09';
+      const isLaurel=sep&&x.cliente_id==='cli-el-laurel';
+      const paid=sep?!SEP_PENDING_HISTORY.has(x.id):!!x.pagado;
+      return {id:x.id,clientId:x.cliente_id,clientName:x.cliente_nombre||'',date:x.fecha,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette,panCompleto:x.pan_completo,guide:isLaurel?'':x.numero_guia,amount:x.monto_guia,paid:isLaurel?false:paid};
+    })});
   }catch(e){return json({error:e.message||'Error historial D1'},500)}
 }
