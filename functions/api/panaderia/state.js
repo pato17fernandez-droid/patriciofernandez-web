@@ -31,6 +31,27 @@ function normalizeGuide(x){
   return {...raw,paid:pending?0:Number(x.total||0),status:pending?'Pendiente':'Pagada'};
 }
 
+function octoberGuidesFromSeed(){
+  return seedOct.filter(r=>r[7]).map(r=>{
+    const [date,ci,h,m,c,b,p,guide,amount,paidFlag]=r;
+    const client=seedClients[ci];
+    const clientId=client?.[0]||'';
+    const kg=Number(h||0)+Number(m||0)+Number(c||0)+Number(b||0)+Number(p||0);
+    const total=Number(amount||0);
+    return {
+      id:`hist-${date}-${clientId}-${guide}`,
+      number:String(guide),
+      clientId,
+      date,
+      kg,
+      total,
+      paid:paidFlag?total:0,
+      status:paidFlag?'Pagada':'Pendiente',
+      notes:'Importado desde Excel histórico'
+    };
+  });
+}
+
 async function addColumn(DB,table,def){
   const name=def.trim().split(/\s+/)[0];
   const info=await DB.prepare(`PRAGMA table_info(${table})`).all();
@@ -129,7 +150,14 @@ export async function onRequestGet({env}){
     return json({
       clients:(c.results||[]).map(x=>({id:x.id,name:x.nombre,rut:x.rut,business:x.giro,address:x.direccion,commune:x.comuna,phone:x.telefono,contact:x.contacto,route:x.ruta,zone:x.zona,priceHallulla:x.precio_hallulla,priceMarraqueta:x.precio_marraqueta,priceCiabatta:x.precio_ciabatta,priceMedioBaguette:x.precio_medio_baguette||0,pricePanCompleto:x.precio_pan_completo||0,oven:!!x.horno,active:!!x.activo})),
       orders:(o.results||[]).map(x=>({id:x.id,clientId:x.cliente_id,hallulla:x.hallulla,marraqueta:x.marraqueta,ciabatta:x.ciabatta,medioBaguette:x.medio_baguette||0,panCompleto:x.pan_completo||0,date:x.fecha_entrega,status:x.estado,notes:x.observaciones})),
-      guides:(g.results||[]).map(normalizeGuide),
+      guides:(()=>{
+        const base=(g.results||[])
+          .filter(x=>String(x.fecha||'').slice(0,7)!=='2026-10' || x.observaciones!=='Importado desde Excel histórico')
+          .map(normalizeGuide);
+        const map=new Map(base.map(x=>[x.id,x]));
+        octoberGuidesFromSeed().forEach(x=>map.set(x.id,x));
+        return [...map.values()].sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.number).localeCompare(String(a.number),undefined,{numeric:true}));
+      })(),
       payments:(p.results||[]).map(x=>({id:x.id,guideId:x.guia_id,clientId:x.cliente_id,date:x.fecha,amount:x.monto,method:x.medio,notes:x.observaciones})),
       trays:(t.results||[]).map(x=>({clientId:x.cliente_id,delivered:x.entregadas,returned:x.devueltas,last:x.ultimo_movimiento})),
       ovens:(h.results||[]).map(x=>({id:x.id,clientId:x.cliente_id,model:x.modelo,installed:x.fecha_instalacion,status:x.estado,notes:x.observaciones}))
