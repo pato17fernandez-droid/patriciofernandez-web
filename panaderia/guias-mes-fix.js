@@ -48,14 +48,17 @@
     const balance=Math.max(0,Number(g.total||0)-Number(g.paid||0));
     if(balance<=0){ if(typeof toast==='function') toast(`Guía N° ${g.number} ya está pagada`); return; }
     if(!confirm(`¿Marcar la guía N° ${g.number} como pagada por ${money(balance)}?`)) return;
+    const choice=prompt('¿Cómo pagó el cliente?\n1 = Transferencia (Banco Santander)\n2 = Efectivo (Caja Panadería)','1');
+    if(choice===null)return;
+    const method=String(choice).trim()==='2'?'Efectivo':'Transferencia';
     try{
-      const r=await fetch(GUIDE_PAID_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({guideId:id,date:today()}),keepalive:true});
+      const r=await fetch(GUIDE_PAID_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({guideId:id,date:today(),method}),keepalive:true});
       if(!r.ok) throw new Error(await r.text());
       g.paid=Number(g.total||0);
       g.status='Pagada';
       db.payments=db.payments||[];
       const pid=`auto-${id}`;
-      if(!db.payments.some(p=>p.id===pid)) db.payments.unshift({id:pid,guideId:g.id,clientId:g.clientId,date:today(),amount:balance,method:'Pago total',notes:'Marcada como pagada desde Guías'});
+      if(!db.payments.some(p=>p.id===pid)) db.payments.unshift({id:pid,guideId:g.id,clientId:g.clientId,date:today(),amount:balance,method,notes:'Marcada como pagada desde Guías'});
       localStorage.setItem('panaderiaSistemaV1',JSON.stringify(db));
       fixedRenderGuides();
       if(typeof renderPayments==='function') renderPayments();
