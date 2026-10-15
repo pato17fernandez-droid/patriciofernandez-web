@@ -40,8 +40,9 @@ async function ensure(DB){
 }
 
 async function seedOctober(DB){
-  const done=await DB.prepare("SELECT valor FROM pan_meta WHERE clave='finanzas_octubre_2026_v1'").first();
+  const done=await DB.prepare("SELECT valor FROM pan_meta WHERE clave='finanzas_octubre_2026_v2'").first();
   if(done)return;
+  await DB.prepare("DELETE FROM pan_fin_movimientos WHERE origen='Excel octubre 2026'").run();
   const stmts=seedFinanceOct2026.map(r=>{
     const [id,fecha,descripcion,tipo,categoria,cuenta,medio,monto,notas,origen]=r;
     return DB.prepare(`INSERT OR IGNORE INTO pan_fin_movimientos
@@ -50,7 +51,7 @@ async function seedOctober(DB){
       .bind(id,fecha||'','2026-10',tipo,categoria,descripcion,cuenta,medio,Number(monto||0),notas||'',origen||'Excel octubre 2026','','','');
   });
   for(let i=0;i<stmts.length;i+=75) await DB.batch(stmts.slice(i,i+75));
-  await DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('finanzas_octubre_2026_v1','ok')").run();
+  await DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('finanzas_octubre_2026_v2','ok')").run();
 }
 
 function movement(x){
