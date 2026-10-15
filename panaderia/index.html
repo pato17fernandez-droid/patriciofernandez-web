@@ -7,6 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="styles.css?v=20261015-1438">
+  <link rel="stylesheet" href="finanzas.css?v=20261015-1808">
 </head>
 <body>
   <section id="loginView" class="login-view">
@@ -38,6 +39,7 @@
         <button data-section="bandejas" class="nav-item"><i class="bi bi-boxes"></i><span>Bandejas</span></button>
         <button data-section="hornos" class="nav-item"><i class="bi bi-fire"></i><span>Hornos</span></button>
         <button data-section="informes" class="nav-item"><i class="bi bi-bar-chart"></i><span>Informes</span></button>
+        <button data-section="finanzas" class="nav-item"><i class="bi bi-wallet2"></i><span>Finanzas</span></button>
         <button data-section="configuracion" class="nav-item"><i class="bi bi-gear"></i><span>Configuración</span></button>
       </nav>
       <button id="logoutBtn" class="logout-btn"><i class="bi bi-box-arrow-left"></i><span>Cerrar sesión</span></button>
@@ -54,10 +56,50 @@
       <section id="section-bandejas" class="app-section"><div class="section-toolbar"><div><h2 class="section-inline-title">Control de bandejas</h2><p class="muted mb-0">Entregas, devoluciones y saldo por cliente</p></div><button class="primary-btn" data-action="new-tray"><i class="bi bi-plus-circle"></i>Registrar movimiento</button></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Entregadas</th><th>Devueltas</th><th>Saldo</th><th>Último movimiento</th><th></th></tr></thead><tbody id="traysTable"></tbody></table></div></div></section>
       <section id="section-hornos" class="app-section"><div class="section-toolbar"><div><h2 class="section-inline-title">Hornos en comodato</h2><p class="muted mb-0">Registro de equipos instalados en clientes</p></div><button class="primary-btn" data-action="new-oven"><i class="bi bi-fire"></i>Registrar horno</button></div><div class="card-panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Modelo</th><th>Instalación</th><th>Estado</th><th>Observaciones</th><th></th></tr></thead><tbody id="ovensTable"></tbody></table></div></div></section>
       <section id="section-informes" class="app-section"><div id="reportCards" class="stats-grid"></div><div class="two-col"><div class="card-panel"><div class="panel-head"><div><h2>Kg por cliente</h2><p>Acumulado del período</p></div></div><div id="reportClientKg"></div></div><div class="card-panel"><div class="panel-head"><div><h2>Cuentas por cobrar</h2><p>Saldo pendiente por cliente</p></div></div><div id="reportReceivables"></div></div></div></section>
+      <section id="section-finanzas" class="app-section">
+        <div class="section-toolbar">
+          <div>
+            <h2 class="section-inline-title">Finanzas</h2>
+            <p class="muted mb-0">Ingresos, egresos, Caja Efectivo y Banco Santander</p>
+          </div>
+          <div class="fin-top-actions">
+            <button id="financeNewIncome" class="secondary-btn"><i class="bi bi-arrow-down-circle"></i> Registrar ingreso</button>
+            <button id="financeNewExpense" class="primary-btn"><i class="bi bi-arrow-up-circle"></i> Registrar egreso</button>
+            <button id="financeTransfer" class="secondary-btn"><i class="bi bi-arrow-left-right"></i> Transferir</button>
+          </div>
+        </div>
+        <div class="section-toolbar">
+          <div class="fin-filter-grid">
+            <div class="search-control"><i class="bi bi-search"></i><input id="financeSearch" placeholder="Buscar movimiento, categoría o nota"></div>
+            <select id="financeMonthFilter" class="form-select"></select>
+            <select id="financeTypeFilter" class="form-select"><option value="">Todos los tipos</option><option>Ingreso</option><option>Egreso</option><option>Transferencia</option></select>
+            <select id="financeAccountFilter" class="form-select"><option value="">Todas las cuentas</option><option>Banco Santander</option><option>Caja Efectivo Panadería</option></select>
+          </div>
+        </div>
+        <div id="financeStats" class="fin-kpis"></div>
+        <div class="two-col">
+          <div class="card-panel">
+            <div class="panel-head"><div><h2>Principales egresos</h2><p>Distribución del mes por categoría</p></div></div>
+            <div id="financeCategories"></div>
+          </div>
+          <div class="card-panel">
+            <div class="panel-head"><div><h2>Caja y bancos</h2><p>Las únicas cuentas operativas registradas</p></div></div>
+            <div class="fin-account-tools">
+              <div class="fin-account-box"><strong><i class="bi bi-cash-stack"></i> Caja Efectivo Panadería</strong><p>El saldo se calcula desde los movimientos y el saldo inicial definido.</p><button id="financeOpeningCaja">Definir saldo inicial</button></div>
+              <div class="fin-account-box"><strong><i class="bi bi-bank"></i> Banco Santander</strong><p>El saldo se calcula desde los movimientos y el saldo inicial definido.</p><button id="financeOpeningSantander">Definir saldo inicial</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-panel mt-3">
+          <div class="panel-head"><div><h2>Movimientos</h2><p id="financeCount">0 movimientos</p></div></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Categoría</th><th>Cuenta</th><th>Monto</th><th>Origen</th><th></th></tr></thead><tbody id="financeTable"></tbody></table></div>
+        </div>
+      </section>
       <section id="section-configuracion" class="app-section"><div class="card-panel settings-panel"><h2>Configuración</h2><p class="muted">Los registros se almacenan en Cloudflare D1 y se sincronizan entre los equipos que utilicen el sistema.</p><div class="settings-actions"><button id="exportBtn" class="secondary-btn"><i class="bi bi-download"></i>Exportar respaldo JSON</button><button id="resetBtn" class="danger-btn"><i class="bi bi-trash"></i>Borrar todos los registros</button></div><hr><div class="alert alert-info mb-0">Base de datos conectada mediante el binding D1 <strong>DB</strong>.</div></div></section>
     </main>
   </div>
   <div class="modal fade" id="entityModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><form id="entityForm"><div class="modal-header"><div><h5 id="modalTitle" class="modal-title">Registro</h5><small id="modalSubtitle" class="muted"></small></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div id="modalBody" class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button id="modalSubmit" type="submit" class="btn btn-warning fw-bold">Guardar</button></div></form></div></div></div>
+  <div class="modal fade" id="financeModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><form id="financeForm"><div class="modal-header"><h5 id="financeModalTitle" class="modal-title">Movimiento financiero</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div id="financeModalBody" class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button id="financeSaveBtn" type="submit" class="btn btn-warning fw-bold">Guardar</button></div></form></div></div></div>
   <div id="toastBox" class="toast-box"></div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="app.js?v=20261015-1438"></script>
@@ -70,5 +112,6 @@
   <script src="nav-state.js?v=20261015-1438"></script>
   <script src="dispatch-ui.js?v=20261015-1438"></script>
   <script src="month-control.js?v=20261015-1438"></script>\n  <script src="octubre-force.js?v=20261015-1527"></script>
+  <script src="finanzas.js?v=20261015-1808"></script>
 </body>
 </html>
