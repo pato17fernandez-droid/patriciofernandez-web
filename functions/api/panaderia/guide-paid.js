@@ -7,6 +7,8 @@ export async function onRequestPost({request,env}){
     const body=await request.json();
     const id=String(body?.guideId||'');
     const date=String(body?.date||new Date().toISOString().slice(0,10));
+    const method=String(body?.method||'Transferencia');
+    const account=method.toLowerCase().includes('efect')?'Caja Efectivo Panadería':'Banco Santander';
     if(!id) return json({error:'Falta guideId'},400);
 
     const g=await env.DB.prepare('SELECT * FROM pan_guias WHERE id=?').bind(id).first();
@@ -21,9 +23,9 @@ export async function onRequestPost({request,env}){
       const payId=`auto-${id}`;
       await env.DB.batch([
         env.DB.prepare(`INSERT OR IGNORE INTO pan_pagos (id,guia_id,cliente_id,fecha,monto,medio,observaciones)
-          VALUES (?,?,?,?,?,?,?)`).bind(payId,id,g.cliente_id,date,balance,'Pago total','Marcada como pagada desde Guías'),
+          VALUES (?,?,?,?,?,?,?)`).bind(payId,id,g.cliente_id,date,balance,method,'Marcada como pagada desde Guías'),
         env.DB.prepare(`INSERT OR IGNORE INTO pan_fin_movimientos (id,fecha,periodo,tipo,categoria,descripcion,cuenta,medio,monto,notas,origen,referencia,transfer_id,sentido)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind('fin-pay-'+payId,date,date.slice(0,7)||new Date().toISOString().slice(0,7),'Ingreso','Pago de clientes','Pago cliente · Guía N° '+String(g.numero||''),'Banco Santander','Pago total',balance,'Marcada como pagada desde Guías','Automático','guia:'+id,'','')
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind('fin-pay-'+payId,date,date.slice(0,7)||new Date().toISOString().slice(0,7),'Ingreso','Pago de clientes','Pago cliente · Guía N° '+String(g.numero||''),account,method,balance,'Marcada como pagada desde Guías','Automático','guia:'+id,'','')
       ]);
     }
 
