@@ -84,7 +84,8 @@
     const g=(db.guides||[]).find(x=>x.id===id);if(!g)return;const bal=Math.max(0,Number(g.total||0)-Number(g.paid||0));
     if(bal<=0){if(typeof toast==='function')toast(`Guía N° ${g.number} ya está pagada`);return;}
     if(!confirm(`¿Marcar la guía N° ${g.number} como pagada por ${money(bal)}?`))return;
-    try{const paymentId=uid('p');const out=await post('guidePaid',{guideId:g.id,paymentId,date:today(),method:'Pago total',notes:'Marcada como pagada desde Guías'});g.paid=Number(out.paid||g.total||0);g.status='Pagada';db.payments=db.payments||[];if(Number(out.amount||0)>0)db.payments.push({id:out.paymentId||paymentId,guideId:g.id,clientId:g.clientId,date:today(),amount:Number(out.amount),method:'Pago total',notes:'Marcada como pagada desde Guías'});persistLocal();if(typeof toast==='function')toast(`Guía N° ${g.number} marcada como pagada`);}catch(err){fail(err)}
+    const choice=prompt('¿Cómo pagó el cliente?\n1 = Transferencia (Banco Santander)\n2 = Efectivo (Caja Panadería)','1');if(choice===null)return;const method=String(choice).trim()==='2'?'Efectivo':'Transferencia';
+    try{const paymentId=uid('p');const out=await post('guidePaid',{guideId:g.id,paymentId,date:today(),method,notes:'Marcada como pagada desde Guías'});g.paid=Number(out.paid||g.total||0);g.status='Pagada';db.payments=db.payments||[];if(Number(out.amount||0)>0)db.payments.push({id:out.paymentId||paymentId,guideId:g.id,clientId:g.clientId,date:today(),amount:Number(out.amount),method,notes:'Marcada como pagada desde Guías'});persistLocal();if(typeof toast==='function')toast(`Guía N° ${g.number} marcada como pagada`);}catch(err){fail(err)}
   }
 
   window.addEventListener('DOMContentLoaded',()=>{const form=document.getElementById('entityForm');if(form)form.addEventListener('submit',submitDbFirst,true);});
