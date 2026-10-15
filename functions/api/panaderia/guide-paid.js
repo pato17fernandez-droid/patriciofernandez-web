@@ -3,6 +3,7 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 export async function onRequestPost({request,env}){
   try{
     if(!env.DB) return json({error:'Binding D1 DB no configurado'},500);
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS pan_fin_movimientos (id TEXT PRIMARY KEY,fecha TEXT DEFAULT '',periodo TEXT NOT NULL,tipo TEXT NOT NULL,categoria TEXT DEFAULT '',descripcion TEXT NOT NULL,cuenta TEXT NOT NULL,medio TEXT DEFAULT '',monto INTEGER NOT NULL DEFAULT 0,notas TEXT DEFAULT '',origen TEXT DEFAULT 'Manual',referencia TEXT DEFAULT '',transfer_id TEXT DEFAULT '',sentido TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`).run();
     const body=await request.json();
     const id=String(body?.guideId||'');
     const date=String(body?.date||new Date().toISOString().slice(0,10));
@@ -18,9 +19,12 @@ export async function onRequestPost({request,env}){
 
     if(balance>0){
       const payId=`auto-${id}`;
-      await env.DB.prepare(`INSERT OR IGNORE INTO pan_pagos (id,guia_id,cliente_id,fecha,monto,medio,observaciones)
-        VALUES (?,?,?,?,?,?,?)`)
-        .bind(payId,id,g.cliente_id,date,balance,'Pago total','Marcada como pagada desde Guías').run();
+      await env.DB.batch([
+        env.DB.prepare(`INSERT OR IGNORE INTO pan_pagos (id,guia_id,cliente_id,fecha,monto,medio,observaciones)
+          VALUES (?,?,?,?,?,?,?)`).bind(payId,id,g.cliente_id,date,balance,'Pago total','Marcada como pagada desde Guías'),
+        env.DB.prepare(`INSERT OR IGNORE INTO pan_fin_movimientos (id,fecha,periodo,tipo,categoria,descripcion,cuenta,medio,monto,notas,origen,referencia,transfer_id,sentido)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind('fin-pay-'+payId,date,date.slice(0,7)||new Date().toISOString().slice(0,7),'Ingreso','Pago de clientes','Pago cliente · Guía N° '+String(g.numero||''),'Banco Santander','Pago total',balance,'Marcada como pagada desde Guías','Automático','guia:'+id,'','')
+      ]);
     }
 
     return json({ok:true,guideId:id,total,paid:total,balance:0});
