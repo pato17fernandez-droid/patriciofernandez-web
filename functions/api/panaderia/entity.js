@@ -7,7 +7,8 @@ async function ensure(DB){
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_guias (id TEXT PRIMARY KEY,numero TEXT NOT NULL,cliente_id TEXT NOT NULL,fecha TEXT NOT NULL,kilos REAL NOT NULL DEFAULT 0,total INTEGER NOT NULL DEFAULT 0,pagado INTEGER NOT NULL DEFAULT 0,estado TEXT NOT NULL DEFAULT 'Pendiente',observaciones TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_pagos (id TEXT PRIMARY KEY,guia_id TEXT NOT NULL,cliente_id TEXT NOT NULL,fecha TEXT NOT NULL,monto INTEGER NOT NULL DEFAULT 0,medio TEXT DEFAULT '',observaciones TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_bandejas (cliente_id TEXT PRIMARY KEY,entregadas INTEGER NOT NULL DEFAULT 0,devueltas INTEGER NOT NULL DEFAULT 0,ultimo_movimiento TEXT DEFAULT '')`),
-    DB.prepare(`CREATE TABLE IF NOT EXISTS pan_hornos (id TEXT PRIMARY KEY,cliente_id TEXT NOT NULL,modelo TEXT DEFAULT '',fecha_instalacion TEXT DEFAULT '',estado TEXT NOT NULL DEFAULT 'Operativo',observaciones TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
+    DB.prepare(`CREATE TABLE IF NOT EXISTS pan_hornos (id TEXT PRIMARY KEY,cliente_id TEXT NOT NULL,modelo TEXT DEFAULT '',fecha_instalacion TEXT DEFAULT '',estado TEXT NOT NULL DEFAULT 'Operativo',observaciones TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
+    DB.prepare(`CREATE TABLE IF NOT EXISTS pan_fin_movimientos (id TEXT PRIMARY KEY,fecha TEXT DEFAULT '',periodo TEXT NOT NULL,tipo TEXT NOT NULL,categoria TEXT DEFAULT '',descripcion TEXT NOT NULL,cuenta TEXT NOT NULL,medio TEXT DEFAULT '',monto INTEGER NOT NULL DEFAULT 0,notas TEXT DEFAULT '',origen TEXT DEFAULT 'Manual',referencia TEXT DEFAULT '',transfer_id TEXT DEFAULT '',sentido TEXT DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
   ]);
   const info=await DB.prepare('PRAGMA table_info(pan_clientes)').all(),cols=new Set((info.results||[]).map(x=>x.name));
   for(const def of ["zona TEXT DEFAULT ''",'precio_hallulla INTEGER NOT NULL DEFAULT 0','precio_marraqueta INTEGER NOT NULL DEFAULT 0','precio_ciabatta INTEGER NOT NULL DEFAULT 0','precio_medio_baguette INTEGER NOT NULL DEFAULT 0','precio_pan_completo INTEGER NOT NULL DEFAULT 0']){
@@ -58,9 +59,12 @@ export async function onRequestPost({request,env}){
       const balance=Math.max(0,Number(g.total||0)-Number(g.pagado||0)),amount=Math.min(Number(x.amount||0),balance);
       if(amount<=0)return json({error:'Monto inválido o guía ya pagada'},400);
       const paid=Number(g.pagado||0)+amount,status=paid>=Number(g.total||0)?'Pagada':'Parcial';
+      const payDate=String(x.date||''),payMethod=String(x.method||''),account=payMethod.toLowerCase().includes('efect')?'Caja Efectivo Panadería':'Banco Santander';
       await env.DB.batch([
-        env.DB.prepare(`INSERT INTO pan_pagos (id,guia_id,cliente_id,fecha,monto,medio,observaciones) VALUES (?,?,?,?,?,?,?)`).bind(String(x.id),String(x.guideId),String(g.cliente_id),String(x.date||''),amount,String(x.method||''),String(x.notes||'')),
-        env.DB.prepare('UPDATE pan_guias SET pagado=?,estado=? WHERE id=?').bind(paid,status,String(x.guideId))
+        env.DB.prepare(`INSERT INTO pan_pagos (id,guia_id,cliente_id,fecha,monto,medio,observaciones) VALUES (?,?,?,?,?,?,?)`).bind(String(x.id),String(x.guideId),String(g.cliente_id),payDate,amount,payMethod,String(x.notes||'')),
+        env.DB.prepare('UPDATE pan_guias SET pagado=?,estado=? WHERE id=?').bind(paid,status,String(x.guideId)),
+        env.DB.prepare(`INSERT OR IGNORE INTO pan_fin_movimientos (id,fecha,periodo,tipo,categoria,descripcion,cuenta,medio,monto,notas,origen,referencia,transfer_id,sentido)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind('fin-pay-'+String(x.id),payDate,payDate.slice(0,7)||new Date().toISOString().slice(0,7),'Ingreso','Pago de clientes','Pago cliente · Guía N° '+String(g.numero||''),account,payMethod,amount,String(x.notes||''),'Automático','guia:'+String(x.guideId),'','')
       ]);
       return json({ok:true,amount,paid,status});
     }
@@ -70,9 +74,12 @@ export async function onRequestPost({request,env}){
       const g=await env.DB.prepare('SELECT * FROM pan_guias WHERE id=?').bind(String(x.guideId)).first();if(!g)return json({error:'Guía no encontrada'},404);
       const amount=Math.max(0,Number(g.total||0)-Number(g.pagado||0));if(amount<=0)return json({ok:true,amount:0,paid:Number(g.pagado||0),status:'Pagada'});
       const paymentId=String(x.paymentId||`pay-${Date.now()}`);
+      const payDate=String(x.date||''),payMethod=String(x.method||'Pago total'),account=payMethod.toLowerCase().includes('efect')?'Caja Efectivo Panadería':'Banco Santander';
       await env.DB.batch([
         env.DB.prepare('UPDATE pan_guias SET pagado=total,estado=? WHERE id=?').bind('Pagada',String(x.guideId)),
-        env.DB.prepare(`INSERT OR IGNORE INTO pan_pagos (id,guia_id,cliente_id,fecha,monto,medio,observaciones) VALUES (?,?,?,?,?,?,?)`).bind(paymentId,String(x.guideId),String(g.cliente_id),String(x.date||''),amount,String(x.method||'Pago total'),String(x.notes||'Marcada como pagada desde Guías'))
+        env.DB.prepare(`INSERT OR IGNORE INTO pan_pagos (id,guia_id,cliente_id,fecha,monto,medio,observaciones) VALUES (?,?,?,?,?,?,?)`).bind(paymentId,String(x.guideId),String(g.cliente_id),payDate,amount,payMethod,String(x.notes||'Marcada como pagada desde Guías')),
+        env.DB.prepare(`INSERT OR IGNORE INTO pan_fin_movimientos (id,fecha,periodo,tipo,categoria,descripcion,cuenta,medio,monto,notas,origen,referencia,transfer_id,sentido)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind('fin-pay-'+paymentId,payDate,payDate.slice(0,7)||new Date().toISOString().slice(0,7),'Ingreso','Pago de clientes','Pago cliente · Guía N° '+String(g.numero||''),account,payMethod,amount,String(x.notes||'Marcada como pagada desde Guías'),'Automático','guia:'+String(x.guideId),'','')
       ]);
       return json({ok:true,amount,paid:Number(g.total||0),status:'Pagada',paymentId});
     }
