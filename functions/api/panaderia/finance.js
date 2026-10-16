@@ -19,6 +19,7 @@ async function ensure(DB){
       referencia TEXT DEFAULT '',
       transfer_id TEXT DEFAULT '',
       sentido TEXT DEFAULT '',
+      impacta_flujo INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`),
     DB.prepare(`CREATE TABLE IF NOT EXISTS pan_fin_cuentas (
@@ -37,6 +38,14 @@ async function ensure(DB){
     DB.prepare(`INSERT OR IGNORE INTO pan_fin_cuentas (id,nombre,saldo_inicial,activo) VALUES ('caja','Caja Efectivo Panadería',0,1)`),
     DB.prepare(`INSERT OR IGNORE INTO pan_fin_cuentas (id,nombre,saldo_inicial,activo) VALUES ('santander','Banco Santander',0,1)`)
   ]);
+  const fi=await DB.prepare('PRAGMA table_info(pan_fin_movimientos)').all();
+  const fc=new Set((fi.results||[]).map(x=>x.name));
+  if(!fc.has('impacta_flujo')) await DB.prepare('ALTER TABLE pan_fin_movimientos ADD COLUMN impacta_flujo INTEGER NOT NULL DEFAULT 1').run();
+  const auto=await DB.prepare("SELECT valor FROM pan_meta WHERE clave='fin_excluir_cheques_v1'").first();
+  if(!auto){
+    await DB.prepare("UPDATE pan_fin_movimientos SET impacta_flujo=0 WHERE tipo='Egreso' AND (UPPER(descripcion) LIKE '%CHEQUE%' OR UPPER(categoria) LIKE '%CHEQUE%')").run();
+    await DB.prepare("INSERT OR REPLACE INTO pan_meta (clave,valor) VALUES ('fin_excluir_cheques_v1','ok')").run();
+  }
 }
 
 async function seedOctober(DB){
@@ -58,7 +67,7 @@ function movement(x){
   return {
     id:x.id,date:x.fecha,period:x.periodo,type:x.tipo,category:x.categoria,description:x.descripcion,
     account:x.cuenta,method:x.medio,amount:Number(x.monto||0),notes:x.notas,origin:x.origen,
-    reference:x.referencia,transferId:x.transfer_id,direction:x.sentido,createdAt:x.created_at
+    reference:x.referencia,transferId:x.transfer_id,direction:x.sentido,affectsFlow:Number(x.impacta_flujo??1)!==0,createdAt:x.created_at
   };
 }
 
@@ -90,13 +99,13 @@ export async function onRequestPost({request,env}){
       if(amount<=0)return json({error:'El monto debe ser mayor a 0'},400);
       const date=String(x.date||''),period=String(x.period||date.slice(0,7)||new Date().toISOString().slice(0,7));
       await env.DB.prepare(`INSERT INTO pan_fin_movimientos
-        (id,fecha,periodo,tipo,categoria,descripcion,cuenta,medio,monto,notas,origen,referencia,transfer_id,sentido)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        (id,fecha,periodo,tipo,categoria,descripcion,cuenta,medio,monto,notas,origen,referencia,transfer_id,sentido,impacta_flujo)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET fecha=excluded.fecha,periodo=excluded.periodo,tipo=excluded.tipo,categoria=excluded.categoria,
-        descripcion=excluded.descripcion,cuenta=excluded.cuenta,medio=excluded.medio,monto=excluded.monto,notas=excluded.notas,
+        descripcion=excluded.descripcion,cuenta=excluded.cuenta,medio=excluded.medio,monto=excluded.monto,notas=excluded.notas,impacta_flujo=excluded.impacta_flujo,
         origen=CASE WHEN pan_fin_movimientos.origen LIKE 'Excel %' THEN pan_fin_movimientos.origen ELSE excluded.origen END`)
         .bind(String(x.id),date,period,String(x.type),String(x.category||''),String(x.description),String(x.account),
-          String(x.method||''),amount,String(x.notes||''),String(x.origin||'Manual'),String(x.reference||''),'',String(x.direction||'')).run();
+          String(x.method||''),amount,String(x.notes||''),String(x.origin||'Manual'),String(x.reference||''),'',String(x.direction||''),x.affectsFlow===false?0:1).run();
       return json({ok:true});
     }
 
