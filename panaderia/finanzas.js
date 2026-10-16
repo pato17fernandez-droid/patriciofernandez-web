@@ -36,16 +36,17 @@
   }
 
   function renderStats(rows){
-    const inc=rows.filter(x=>x.type==='Ingreso').reduce((s,x)=>s+Number(x.amount||0),0);
-    const out=rows.filter(x=>x.type==='Egreso').reduce((s,x)=>s+Number(x.amount||0),0);
-    const net=inc-out;
+    const inc=rows.filter(x=>x.type==='Ingreso'&&x.affectsFlow!==false).reduce((s,x)=>s+Number(x.amount||0),0);
+    const operatingOut=rows.filter(x=>x.type==='Egreso'&&x.affectsFlow!==false).reduce((s,x)=>s+Number(x.amount||0),0);
+    const excludedOut=rows.filter(x=>x.type==='Egreso'&&x.affectsFlow===false).reduce((s,x)=>s+Number(x.amount||0),0);
+    const net=inc-operatingOut;
     const stats=q('financeStats');if(!stats)return;
     stats.innerHTML=`
-      <div class="fin-kpi"><span>Ingresos · ${safe(labelMonth(currentPeriod()))}</span><strong class="money-positive">${moneyCL(inc)}</strong><small>${rows.filter(x=>x.type==='Ingreso').length} movimientos</small></div>
-      <div class="fin-kpi"><span>Egresos · ${safe(labelMonth(currentPeriod()))}</span><strong class="money-pending">${moneyCL(out)}</strong><small>${rows.filter(x=>x.type==='Egreso').length} movimientos</small></div>
-      <div class="fin-kpi"><span>Flujo neto</span><strong class="${net>=0?'money-positive':'money-pending'}">${moneyCL(net)}</strong><small>Ingresos menos egresos</small></div>
-      <div class="fin-kpi account"><span><i class="bi bi-cash-stack"></i> Caja Efectivo</span><strong>${moneyCL(calcAccount('Caja Efectivo Panadería'))}</strong><small>Saldo calculado desde registros</small></div>
-      <div class="fin-kpi account"><span><i class="bi bi-bank"></i> Banco Santander</span><strong>${moneyCL(calcAccount('Banco Santander'))}</strong><small>Saldo calculado desde registros</small></div>`;
+      <div class="fin-kpi"><span>Ingresos · ${safe(labelMonth(currentPeriod()))}</span><strong class="money-positive">${moneyCL(inc)}</strong><small>${rows.filter(x=>x.type==='Ingreso'&&x.affectsFlow!==false).length} movimientos</small></div>
+      <div class="fin-kpi"><span>Egresos operacionales · ${safe(labelMonth(currentPeriod()))}</span><strong class="money-pending">${moneyCL(operatingOut)}</strong><small>${excludedOut?moneyCL(excludedOut)+' fuera del flujo neto':'Sin egresos excluidos'}</small></div>
+      <div class="fin-kpi"><span>Flujo neto operacional</span><strong class="${net>=0?'money-positive':'money-pending'}">${moneyCL(net)}</strong><small>No descuenta cheques/gastos marcados como automáticos</small></div>
+      <div class="fin-kpi account"><span><i class="bi bi-cash-stack"></i> Caja Efectivo</span><strong>${moneyCL(calcAccount('Caja Efectivo Panadería'))}</strong><small>Saldo real: incluye todos los movimientos</small></div>
+      <div class="fin-kpi account"><span><i class="bi bi-bank"></i> Banco Santander</span><strong>${moneyCL(calcAccount('Banco Santander'))}</strong><small>Saldo real: incluye cheques y gastos automáticos</small></div>`;
   }
 
   function filteredRows(){
@@ -62,7 +63,7 @@
   function renderCategories(rows){
     const box=q('financeCategories');if(!box)return;
     const map={};
-    rows.filter(x=>x.type==='Egreso').forEach(x=>map[x.category||'Sin categoría']=(map[x.category||'Sin categoría']||0)+Number(x.amount||0));
+    rows.filter(x=>x.type==='Egreso'&&x.affectsFlow!==false).forEach(x=>map[x.category||'Sin categoría']=(map[x.category||'Sin categoría']||0)+Number(x.amount||0));
     const list=Object.entries(map).sort((a,b)=>b[1]-a[1]),max=Math.max(1,...list.map(x=>x[1]));
     box.innerHTML=list.length?list.slice(0,8).map(([name,total])=>`
       <div class="fin-cat-row"><div><span>${safe(name)}</span><strong>${moneyCL(total)}</strong></div><div class="fin-bar"><i style="width:${Math.max(4,total/max*100)}%"></i></div></div>`).join(''):'<p class="text-muted mb-0">Sin egresos para este período.</p>';
@@ -76,7 +77,7 @@
       const editable=x.type!=='Transferencia';
       return `<tr>
         <td>${dateCL(x.date)}</td>
-        <td><strong>${safe(x.description)}</strong><small class="fin-note">${safe(x.notes||'')}</small></td>
+        <td><strong>${safe(x.description)}</strong>${x.type==='Egreso'&&x.affectsFlow===false?'<small class="fin-note"><span class="badge-soft badge-blue">Fuera del flujo neto</span></small>':''}<small class="fin-note">${safe(x.notes||'')}</small></td>
         <td><span class="badge-soft ${x.type==='Ingreso'?'badge-green':x.type==='Egreso'?'badge-yellow':'badge-blue'}">${safe(x.type)}</span></td>
         <td>${safe(x.category||'-')}</td>
         <td>${safe(x.account)}</td>
@@ -126,8 +127,17 @@
         <div><label class="form-label">Monto</label><input name="amount" type="number" min="1" step="1" class="form-control" required value="${Number(x.amount||'')||''}"></div>
         <div><label class="form-label">Medio</label><select name="method" id="finMethod" class="form-select"><option ${x.method==='Transferencia'?'selected':''}>Transferencia</option><option ${x.method==='Efectivo'?'selected':''}>Efectivo</option></select></div>
         <div class="full"><label class="form-label">Notas</label><textarea name="notes" class="form-control" rows="2">${safe(x.notes||'')}</textarea></div>
+        <div class="full" id="finFlowWrap">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="excludeFlow" id="finExcludeFlow" ${x.affectsFlow===false?'checked':''}>
+            <label class="form-check-label" for="finExcludeFlow"><strong>Excluir del flujo neto operacional</strong></label>
+          </div>
+          <small class="text-muted">Úsalo para cheques u otros pagos automáticos/obligatorios. El monto igual se descontará de Caja o Banco Santander.</small>
+        </div>
       </div>`;
-    q('finType').addEventListener('change',e=>q('finCategory').innerHTML=categoryOptions(e.target.value));
+    const syncFlowOption=()=>{const wrap=q('finFlowWrap');if(wrap)wrap.style.display=q('finType').value==='Egreso'?'block':'none'};
+    q('finType').addEventListener('change',e=>{q('finCategory').innerHTML=categoryOptions(e.target.value);syncFlowOption()});
+    syncFlowOption();
     q('finAccount').addEventListener('change',e=>{q('finMethod').value=e.target.value==='Caja Efectivo Panadería'?'Efectivo':'Transferencia'});
     modal().show();
   }
@@ -156,7 +166,7 @@
         await api({action:'transfer',data:{id:uid(),date:v.date,period:currentPeriod(),from:v.from,to:v.to,amount:Number(v.amount),notes:v.notes||''}});
       }else{
         const type=v.type||editing?.type||'Egreso';
-        await api({action:'save',data:{id:editing?.id||uid(),date:v.date,period:editing?.period||currentPeriod(),type,description:v.description,category:v.category,account:v.account,method:v.method,amount:Number(v.amount),notes:v.notes||'',origin:editing?.origin||'Manual'}});
+        await api({action:'save',data:{id:editing?.id||uid(),date:v.date,period:editing?.period||currentPeriod(),type,description:v.description,category:v.category,account:v.account,method:v.method,amount:Number(v.amount),notes:v.notes||'',origin:editing?.origin||'Manual',affectsFlow:type==='Egreso'?v.excludeFlow!=='on':true}});
       }
       modal().hide();editing=null;await load();if(typeof toast==='function')toast('Movimiento financiero guardado');
     }catch(err){alert(err.message||'No se pudo guardar')}finally{btn.disabled=false;btn.textContent='Guardar'}
