@@ -55,9 +55,9 @@
           <button class="secondary-btn" type="button" id="et-preview"><i class="bi bi-eye"></i> Actualizar vista previa</button>
           <span id="et-count" class="muted"></span>
         </div>
-        <div class="mt-3"><h3 style="font-size:16px">Vista previa aproximada</h3>
-          <div id="et-preview-box" style="background:white;color:#111;border:1px solid #aaa;width:min(100%,302px);padding:14px;font-family:Arial,sans-serif"></div>
-          <p class="form-text mt-2">Formato inicial 80 × 55 mm. Debe ajustarse al tamaño real de tus etiquetas y al controlador de la POS-8360.</p>
+        <div class="mt-3"><h3 style="font-size:16px">Vista previa de la etiqueta</h3>
+          <div id="et-preview-box" style="background:white;color:#111;border:1px solid #aaa;width:min(100%,430px);aspect-ratio:80/45;padding:3px;font-family:Arial,sans-serif"></div>
+          <p class="form-text mt-2">Formato inicial 80 × 45 mm, adaptado al ancho de la impresora térmica. Debe ajustarse al tamaño real de tus etiquetas y al controlador de la POS-8360.</p>
         </div>
       </div>`;
     document.querySelector('.main-content')?.appendChild(panel);
@@ -108,19 +108,41 @@
     if(!Number.isInteger(days)||days<0||days>365||!Number.isInteger(months)||months<0||months>60) throw Error('Revisa los plazos de vencimiento.');
     return {client,product:$e('et-product').value,date:fmt(parseISO(date)),useUntil:plusDays(date,days),chamberExpiry:plusMonths(date,months),bags};
   }
+  // Plantilla inspirada en la etiqueta de trazabilidad usada en 4Barcode.
+  const labelCSS = `
+    * { box-sizing: border-box; }
+    .trace-label { width:100%; height:100%; table-layout:fixed; border-collapse:collapse; background:#fff; color:#000; font-family:Arial,Helvetica,sans-serif; }
+    .trace-label col:first-child { width:50%; }
+    .trace-label col:nth-child(2) { width:12.5%; }
+    .trace-label col:nth-child(3) { width:25%; }
+    .trace-label col:nth-child(4) { width:12.5%; }
+    .trace-label th,.trace-label td { border:1.2px solid #000; padding:0 1mm; text-align:center; vertical-align:middle; font-size:9pt; line-height:1.05; overflow-wrap:anywhere; }
+    .trace-label .trace-title { height:21%; font-size:17pt; font-weight:800; letter-spacing:.2px; }
+    .trace-label .trace-strong { font-size:12pt; font-weight:800; }
+    .trace-label .trace-dates { height:10%; }
+    .trace-label .trace-date { height:11%; font-size:10pt; }
+    .trace-label .trace-info { height:10%; }
+  `;
+  const dateCells = value => {
+    const [dia,mes,anio]=value.split('/');
+    return '<td>'+html(dia)+'</td><td>'+html(mes)+'</td><td>'+html(anio)+'</td>';
+  };
   function innerLabel(d) {
-    return '<div class="et-title">NOVABAKE</div><div class="et-line"></div>'+
-      '<div><strong>LOTE:</strong> '+html(d.client)+'</div>'+
-      '<div><strong>NOMBRE PRODUCTO:</strong> '+html(d.product.toUpperCase())+'</div>'+
-      '<div><strong>FECHA ENTREGA:</strong> '+html(d.date)+'</div>'+
-      '<div><strong>USAR HASTA:</strong> '+html(d.useUntil)+'</div>'+
-      '<div><strong>VTO. CÁMARA:</strong> '+html(d.chamberExpiry)+'</div>';
+    return '<table class="trace-label" aria-label="Etiqueta de trazabilidad"><colgroup><col><col><col><col></colgroup>'+
+      '<tbody><tr><th class="trace-title" colspan="4">TRAZABILIDAD</th></tr>'+
+      '<tr class="trace-info"><td>LOTE</td><td colspan="3">'+html(d.client.toUpperCase())+'</td></tr>'+
+      '<tr class="trace-info"><td>MARCA</td><td colspan="3" class="trace-strong">NOVABAKE</td></tr>'+
+      '<tr class="trace-info"><td>NOMBRE PRODUCTO</td><td colspan="3">'+html(d.product.toUpperCase())+'</td></tr>'+
+      '<tr class="trace-dates"><td></td><td>DIA</td><td>MES</td><td>AÑO</td></tr>'+
+      '<tr class="trace-date"><td>FECHA DE ENTREGA</td>'+dateCells(d.date)+'</tr>'+
+      '<tr class="trace-date"><td>USAR HASTA</td>'+dateCells(d.useUntil)+'</tr>'+
+      '<tr class="trace-date"><td>FECHA Vto. EN CAMARA</td>'+dateCells(d.chamberExpiry)+'</tr></tbody></table>';
   }
   function refreshPreview() {
     if(!$e('et-preview-box')) return;
     try {
       const d=data();
-      $e('et-preview-box').innerHTML=innerLabel(d);
+      $e('et-preview-box').innerHTML='<style>'+labelCSS+'</style>'+innerLabel(d);
       $e('et-count').textContent=d.bags+' etiqueta(s)';
     } catch(e) {
       $e('et-preview-box').textContent=e.message;
@@ -136,8 +158,9 @@
     const labels=Array.from({length:d.bags},()=>'<div class="label">'+innerLabel(d)+'</div>').join('');
     popup.document.open();
     popup.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Etiquetas NOVABAKE</title><style>'+
-      '@page{size:80mm 55mm;margin:0}*{box-sizing:border-box}body{margin:0;color:#000;font-family:Arial,sans-serif}.label{width:80mm;height:55mm;padding:4mm 4mm 2mm;font-size:11pt;line-height:1.33;overflow:hidden;break-after:page;page-break-after:always}.label:last-child{break-after:auto;page-break-after:auto}.et-title{text-align:center;font-size:15pt;font-weight:800}.et-line{border-bottom:1px solid black;margin:2mm 0}.label div{margin-bottom:1mm}.controls{display:none}@media screen{body{background:#eee}.label{background:white;margin:12px auto;box-shadow:0 2px 10px #bbb}.controls{display:block;position:sticky;top:0;background:#fff;padding:12px;text-align:center}.controls button{padding:8px 20px}}</style></head><body>'+
-      '<div class="controls"><button onclick="window.print()">Imprimir etiquetas</button> Selecciona POS-8360, tamaño 80 × 55 mm, escala 100%, sin encabezados ni pies.</div>'+
+      labelCSS+
+      '@page{size:80mm 45mm;margin:0}body{margin:0;color:#000;font-family:Arial,sans-serif}.label{width:80mm;height:45mm;padding:1.5mm;overflow:hidden;break-after:page;page-break-after:always}.label:last-child{break-after:auto;page-break-after:auto}.controls{display:none}@media screen{body{background:#eee}.label{background:white;margin:12px auto;box-shadow:0 2px 10px #bbb}.controls{display:block;position:sticky;top:0;background:#fff;padding:12px;text-align:center}.controls button{padding:8px 20px}}</style></head><body>'+
+      '<div class="controls"><button onclick="window.print()">Imprimir etiquetas</button> Selecciona POS-8360, papel 80 mm, escala 100%, sin márgenes ni encabezados. Haz primero una impresión de prueba.</div>'+
       labels+'</body></html>');
     popup.document.close();
   }
