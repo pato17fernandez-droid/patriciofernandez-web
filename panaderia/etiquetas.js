@@ -43,7 +43,9 @@
             <select class="form-select" id="et-product">${products.map(p=>'<option>'+p+'</option>').join('')}</select></div>
           <div class="col-md-6"><label class="form-label" for="et-bags">Cantidad real de bolsas (= etiquetas)</label>
             <input id="et-bags" class="form-control" type="number" min="1" max="500" step="1" value="1"></div>
-          <div class="col-md-4"><label class="form-label" for="et-date">Fecha de entrega / salida</label>
+          <div class="col-md-6"><label class="form-label" for="et-orientation">Orientación de impresión</label>
+            <select id="et-orientation" class="form-select"><option value="rotate" selected>Girar 90° (recomendado para tu rollo)</option><option value="normal">Sin giro</option></select></div>
+          <div class="col-md-6"><label class="form-label" for="et-date">Fecha de entrega / salida</label>
             <input id="et-date" class="form-control" type="date" required></div>
           <div class="col-md-4"><label class="form-label" for="et-days">Usar hasta (días posteriores)</label>
             <input id="et-days" class="form-control" type="number" min="0" max="365" value="5"></div>
@@ -57,7 +59,7 @@
         </div>
         <div class="mt-3"><h3 style="font-size:16px">Vista previa de la etiqueta</h3>
           <div id="et-preview-box" style="background:white;color:#111;border:1px solid #aaa;width:min(100%,430px);aspect-ratio:80/45;padding:3px;font-family:Arial,sans-serif"></div>
-          <p class="form-text mt-2">Formato inicial 80 × 45 mm, adaptado al ancho de la impresora térmica. Debe ajustarse al tamaño real de tus etiquetas y al controlador de la POS-8360.</p>
+          <p class="form-text mt-2">Formato de prueba 80 × 45 mm. Desactiva encabezados y pies de página en el diálogo de impresión. Usa escala 100 % y márgenes: ninguno. Debe ajustarse al tamaño real de tus etiquetas y al controlador de la POS-8360.</p>
         </div>
       </div>`;
     document.querySelector('.main-content')?.appendChild(panel);
@@ -155,11 +157,14 @@
     if(!confirm('Preparar '+d.bags+' etiqueta(s) de '+d.product+' para '+d.client+'? Verifica los datos antes de imprimir.')) return;
     const popup=window.open('','_blank');
     if(!popup) { alert('El navegador bloqueó la ventana de impresión. Permite ventanas emergentes para este sitio.');return; }
-    const labels=Array.from({length:d.bags},()=>'<div class="label">'+innerLabel(d)+'</div>').join('');
+    const rotate=$e('et-orientation').value==='rotate';
+    const labels=Array.from({length:d.bags},()=>'<div class="label"><div class="art">'+innerLabel(d)+'</div></div>').join('');
     popup.document.open();
     popup.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Etiquetas NOVABAKE</title><style>'+
       labelCSS+
-      '@page{size:80mm 45mm;margin:0}body{margin:0;color:#000;font-family:Arial,sans-serif}.label{width:80mm;height:45mm;padding:1.5mm;overflow:hidden;break-after:page;page-break-after:always}.label:last-child{break-after:auto;page-break-after:auto}.controls{display:none}@media screen{body{background:#eee}.label{background:white;margin:12px auto;box-shadow:0 2px 10px #bbb}.controls{display:block;position:sticky;top:0;background:#fff;padding:12px;text-align:center}.controls button{padding:8px 20px}}</style></head><body>'+
+       '@page{size:80mm 45mm;margin:0}html,body{margin:0;padding:0;color:#000;font-family:Arial,sans-serif}.label{width:80mm;height:45mm;position:relative;overflow:hidden;break-after:page;page-break-after:always}.label:last-child{break-after:auto;page-break-after:auto}.art{position:absolute;left:1.5mm;top:1.5mm;width:77mm;height:42mm}.controls{display:none}@media screen{body{background:#eee}.label{background:white;margin:12px auto;box-shadow:0 2px 10px #bbb}.controls{display:block;position:sticky;top:0;background:#fff;padding:12px;text-align:center}.controls button{padding:8px 20px}}'+
+      (rotate ? '.art{left:80mm;top:0;width:42mm;height:77mm;transform-origin:top left;transform:rotate(90deg) translateY(-42mm)}' : '')+
+      '</style></head><body>'+
       '<div class="controls"><button onclick="window.print()">Imprimir etiquetas</button> Selecciona POS-8360, papel 80 mm, escala 100%, sin márgenes ni encabezados. Haz primero una impresión de prueba.</div>'+
       labels+'</body></html>');
     popup.document.close();
