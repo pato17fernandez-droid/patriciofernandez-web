@@ -163,7 +163,7 @@
     popup.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Etiquetas NOVABAKE</title><style>'+
       labelCSS+
        '@page{size:80mm 45mm;margin:0}html,body{margin:0;padding:0;color:#000;font-family:Arial,sans-serif}.label{width:80mm;height:45mm;position:relative;overflow:hidden;break-after:page;page-break-after:always}.label:last-child{break-after:auto;page-break-after:auto}.art{position:absolute;left:1.5mm;top:1.5mm;width:77mm;height:42mm}.controls{display:none}@media screen{body{background:#eee}.label{background:white;margin:12px auto;box-shadow:0 2px 10px #bbb}.controls{display:block;position:sticky;top:0;background:#fff;padding:12px;text-align:center}.controls button{padding:8px 20px}}'+
-      (rotate ? '.art{left:80mm;top:0;width:42mm;height:77mm;transform-origin:top left;transform:rotate(90deg) translateY(-42mm)}' : '')+
+      (rotate ? '.art{left:78.5mm;top:1.5mm;width:42mm;height:77mm;transform-origin:top left;transform:rotate(90deg)}' : '')+
       '</style></head><body>'+
       '<div class="controls"><button onclick="window.print()">Imprimir etiquetas</button> Selecciona POS-8360, papel 80 mm, escala 100%, sin márgenes ni encabezados. Haz primero una impresión de prueba.</div>'+
       labels+'</body></html>');
