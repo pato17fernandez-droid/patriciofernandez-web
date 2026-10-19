@@ -91,6 +91,20 @@ async function syncSeedClients(DB){
       precio_medio_baguette=excluded.precio_medio_baguette,precio_pan_completo=excluded.precio_pan_completo`)
     .bind(c[0],c[1],c[2],c[3],c[4],c[5],c[6],c[7],c[8]||0,c[9]||0));
   for(let i=0;i<stmts.length;i+=75)await DB.batch(stmts.slice(i,i+75));
+
+  // Normalización definitiva de clientes.
+  // ANDREA SUEGRO era el mismo cliente que RUSTICO: cualquier dato operativo se consolida en RUSTICO.
+  await DB.batch([
+    DB.prepare("UPDATE pan_pedidos SET cliente_id='cli-rustico' WHERE cliente_id='cli-andrea-suegro'"),
+    DB.prepare("UPDATE pan_guias SET cliente_id='cli-rustico' WHERE cliente_id='cli-andrea-suegro'"),
+    DB.prepare("UPDATE pan_pagos SET cliente_id='cli-rustico' WHERE cliente_id='cli-andrea-suegro'"),
+    DB.prepare("UPDATE pan_hornos SET cliente_id='cli-rustico' WHERE cliente_id='cli-andrea-suegro'"),
+    DB.prepare("DELETE FROM pan_bandejas WHERE cliente_id='cli-andrea-suegro'"),
+    DB.prepare("DELETE FROM pan_clientes WHERE id='cli-andrea-suegro'"),
+    DB.prepare("UPDATE pan_clientes SET activo=0,horno=0 WHERE id='cli-tayra'"),
+    DB.prepare("UPDATE pan_hornos SET cliente_id='cli-mica' WHERE cliente_id='cli-tayra'"),
+    DB.prepare("UPDATE pan_clientes SET activo=1,horno=1 WHERE id='cli-mica'")
+  ]);
 }
 
 async function seedHistorical(DB){
