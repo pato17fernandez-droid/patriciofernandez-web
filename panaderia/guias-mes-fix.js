@@ -7,7 +7,13 @@
   const selectedMonth=()=>readMonth();
   const monthLabel=ym=>{const [y,m]=String(ym).split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('es-CL',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase())};
 
+  function normalizeKnownPaidGuides(){
+    const g=(db.guides||[]).find(x=>x.id==='hist-2026-09-30-cli-fredy-1734');
+    if(g){g.paid=Number(g.total||0);g.status='Pagada';}
+  }
+
   function fixedRenderGuides(){
+    normalizeKnownPaidGuides();
     const table=byId('guidesTable');
     if(!table || typeof db==='undefined') return;
     const month=selectedMonth();
