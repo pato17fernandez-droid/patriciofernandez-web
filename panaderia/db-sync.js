@@ -216,6 +216,34 @@
     return merged;
   }
 
+  function bootstrapStaticOctober(){
+    try{
+      const pack=window.PANADERIA_OCT_2026;
+      if(!pack?.guides?.length)return false;
+
+      if(typeof db!=='undefined'){
+        db.guides=normalizeSeptemberGuides(applyStaticOctoberGuides(Array.isArray(db.guides)?db.guides:[]));
+        try{localStorage.setItem(LOCAL_KEY,JSON.stringify(db));}catch{}
+        try{if(typeof renderAll==='function')renderAll();}catch{}
+        try{if(typeof renderGuides==='function')renderGuides();}catch{}
+      }
+
+      if(pack.history?.length){
+        panHistory=normalizeSeptemberHistory(applyStaticOctoberHistory(Array.isArray(panHistory)?panHistory:[]));
+        window.panHistorial=panHistory;
+        historyReady=true;
+        try{refreshMonthOptions();}catch{}
+        try{renderHistoricalReports();}catch{}
+      }
+
+      console.info('Panadería: respaldo octubre aplicado directamente',pack.guides.length);
+      return true;
+    }catch(e){
+      console.error('Panadería: no se pudo aplicar respaldo octubre',e);
+      return false;
+    }
+  }
+
   async function loadHistory(){
     try{
       const r=await fetch(HISTORY_API,{cache:'no-store'});
@@ -257,8 +285,11 @@
   window.addEventListener('DOMContentLoaded',async()=>{
     installReportUI();
     try{renderReports=renderHistoricalReports}catch(e){console.warn(e)}
+    bootstrapStaticOctober();
     await loadHistory();
+    bootstrapStaticOctober();
     await loadRemote();
+    bootstrapStaticOctober();
     if(typeof saveData==='function'){
       const original=saveData;
       saveData=function(){original();pushRemote(db)};
