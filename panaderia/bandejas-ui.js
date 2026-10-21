@@ -36,7 +36,9 @@
   function renderBalances(){
     const body=q('traysTable');if(!body)return;
     const search=(q('traySearch')?.value||'').toLowerCase();
-    const rows=(state.balances||[]).filter(x=>Number(x.balance||0)!==0 || x.delivered || x.returned).filter(x=>{
+    const byClient=new Map((state.balances||[]).map(x=>[x.clientId,x]));
+    const allActive=(db.clients||[]).filter(c=>c.active!==false).map(c=>byClient.get(c.id)||({clientId:c.id,delivered:0,returned:0,balance:0,last:''}));
+    const rows=allActive.filter(x=>{
       const name=client(x.clientId)?.name||x.clientId;
       return !search||name.toLowerCase().includes(search);
     }).sort((a,b)=>Number(b.balance||0)-Number(a.balance||0)||String(client(a.clientId)?.name||'').localeCompare(String(client(b.clientId)?.name||''),'es'));
