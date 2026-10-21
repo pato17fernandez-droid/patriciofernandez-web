@@ -12,27 +12,36 @@
     if(!r.ok)throw new Error(data.error||`HTTP ${r.status}`);
     return data;
   }
-  const REQUIRED_CLIENTS=[
-    {id:'cli-la-vuelta',name:'LA VUELTA',active:true},
-    {id:'cli-la-coopeh',name:'LA COOPE H',active:true}
-  ];
-  function ensureRequiredClients(){
-    db.clients=db.clients||[];
-    REQUIRED_CLIENTS.forEach(req=>{
-      const found=db.clients.find(c=>c.id===req.id);
-      if(found){found.name=req.name;found.active=true;}
-      else db.clients.push({...req});
+  const STATIC_CLIENTS=[
+    ['cli-cyd','CYD'],['cli-david-choroico','CHOROICO'],['cli-don-juan-melipeuco','JUAN MELIPEUCO'],
+    ['cli-el-huerto-jaramillo','EL HUERTO JARAMILLO'],['cli-el-laurel','EL LAUREL'],['cli-el-refugio','EL REFUGIO'],
+    ['cli-fredy','FREDY HUISCAPI'],['cli-hernan-astorga-pucon','HERNAN'],['cli-ibacache','IBACACHE'],
+    ['cli-isabel-pitru','ISABEL PITRU'],['cli-israel-nancul','ISRAEL ÑANCUL'],['cli-jerry','JERRY'],
+    ['cli-jjyd','JJYD'],['cli-km-06','KM 06'],['cli-la-coope','LA COOPE'],['cli-la-estrella','LA ESTRELLA'],
+    ['cli-leonardo','LEO CAMPOS'],['cli-maria-flores','MARIA FLORES'],['cli-maria-flores-cunco','MARIA FLORES CUNCO'],
+    ['cli-metrenco','METRENCO'],['cli-mys','MyS'],['cli-rustico','RUSTICO'],['cli-san-pedro','SAN PEDRO'],
+    ['cli-sandra','SANDRA'],['cli-texia-melipeuco','TEXIA MELIPEUCO'],['cli-tote','TOTE'],['cli-tote-2','TOTE2'],
+    ['cli-viejo-mundo','VIEJO MUNDO'],['cli-walter','WALTER'],['cli-wilson','WILSON'],
+    ['cli-la-coopeh','LA COOPE H'],['cli-la-vuelta','LA VUELTA'],['cli-mica','MICA']
+  ].map(([id,name])=>({id,name,active:true}));
+
+  function availableClients(){
+    const merged=new Map(STATIC_CLIENTS.map(x=>[x.id,{...x}]));
+    (db.clients||[]).forEach(x=>{
+      if(x.active===false){merged.delete(x.id);return;}
+      merged.set(x.id,{...merged.get(x.id),...x});
     });
+    return [...merged.values()];
   }
+
   const client=id=>{
     const found=typeof getClient==='function'?getClient(id):null;
-    return found||REQUIRED_CLIENTS.find(c=>c.id===id)||null;
+    return found||STATIC_CLIENTS.find(c=>c.id===id)||null;
   };
 
   function today(){return new Date().toISOString().slice(0,10)}
   function clientOptions(selected=''){
-    ensureRequiredClients();
-    return (db.clients||[]).filter(c=>c.active!==false).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'es')).map(c=>`<option value="${safe(c.id)}" ${c.id===selected?'selected':''}>${safe(c.name)}</option>`).join('');
+    return availableClients().slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'es')).map(c=>`<option value="${safe(c.id)}" ${c.id===selected?'selected':''}>${safe(c.name)}</option>`).join('');
   }
 
   function renderStats(){
@@ -50,11 +59,10 @@
   }
 
   function renderBalances(){
-    ensureRequiredClients();
     const body=q('traysTable');if(!body)return;
     const search=(q('traySearch')?.value||'').toLowerCase();
     const byClient=new Map((state.balances||[]).map(x=>[x.clientId,x]));
-    const allActive=(db.clients||[]).filter(c=>c.active!==false).map(c=>byClient.get(c.id)||({clientId:c.id,delivered:0,returned:0,balance:0,last:''}));
+    const allActive=availableClients().map(c=>byClient.get(c.id)||({clientId:c.id,delivered:0,returned:0,balance:0,last:''}));
     const rows=allActive.filter(x=>{
       const name=client(x.clientId)?.name||x.clientId;
       return !search||name.toLowerCase().includes(search);
@@ -174,7 +182,6 @@
   }
 
   function install(){
-    ensureRequiredClients();
     const section=q('section-bandejas');if(!section)return;
     section.innerHTML=`
       <div class="section-toolbar">
@@ -225,6 +232,7 @@
     });
     document.querySelector('[data-section="bandejas"]')?.addEventListener('click',()=>setTimeout(load,0));
     load();
+    setTimeout(()=>{try{render();const f=q('trayClientFilter');if(f&&f.options.length<=1)f.innerHTML='<option value="">Todos los clientes</option>'+clientOptions();}catch{}},1200);
   }
 
   window.addEventListener('DOMContentLoaded',()=>setTimeout(install,50));
