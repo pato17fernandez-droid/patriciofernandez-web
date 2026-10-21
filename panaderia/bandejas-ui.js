@@ -12,10 +12,26 @@
     if(!r.ok)throw new Error(data.error||`HTTP ${r.status}`);
     return data;
   }
-  const client=id=>typeof getClient==='function'?getClient(id):null;
+  const REQUIRED_CLIENTS=[
+    {id:'cli-la-vuelta',name:'LA VUELTA',active:true},
+    {id:'cli-la-coopeh',name:'LA COOPE H',active:true}
+  ];
+  function ensureRequiredClients(){
+    db.clients=db.clients||[];
+    REQUIRED_CLIENTS.forEach(req=>{
+      const found=db.clients.find(c=>c.id===req.id);
+      if(found){found.name=req.name;found.active=true;}
+      else db.clients.push({...req});
+    });
+  }
+  const client=id=>{
+    const found=typeof getClient==='function'?getClient(id):null;
+    return found||REQUIRED_CLIENTS.find(c=>c.id===id)||null;
+  };
 
   function today(){return new Date().toISOString().slice(0,10)}
   function clientOptions(selected=''){
+    ensureRequiredClients();
     return (db.clients||[]).filter(c=>c.active!==false).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'es')).map(c=>`<option value="${safe(c.id)}" ${c.id===selected?'selected':''}>${safe(c.name)}</option>`).join('');
   }
 
@@ -34,6 +50,7 @@
   }
 
   function renderBalances(){
+    ensureRequiredClients();
     const body=q('traysTable');if(!body)return;
     const search=(q('traySearch')?.value||'').toLowerCase();
     const byClient=new Map((state.balances||[]).map(x=>[x.clientId,x]));
@@ -157,6 +174,7 @@
   }
 
   function install(){
+    ensureRequiredClients();
     const section=q('section-bandejas');if(!section)return;
     section.innerHTML=`
       <div class="section-toolbar">
