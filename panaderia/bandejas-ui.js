@@ -20,7 +20,7 @@
     ['cli-jjyd','JJYD'],['cli-km-06','KM 06'],['cli-la-coope','LA COOPE'],['cli-la-estrella','LA ESTRELLA'],
     ['cli-leonardo','LEO CAMPOS'],['cli-maria-flores','MARIA FLORES'],['cli-maria-flores-cunco','MARIA FLORES CUNCO'],
     ['cli-metrenco','METRENCO'],['cli-mys','MyS'],['cli-rustico','RUSTICO'],['cli-san-pedro','SAN PEDRO'],
-    ['cli-sandra','SANDRA'],['cli-texia-melipeuco','TEXIA MELIPEUCO'],['cli-tote','TOTE'],['cli-tote-2','TOTE2'],
+    ['cli-sandra','SANDRA'],['cli-texia-melipeuco','TEXIA MELIPEUCO'],['cli-tote','TOTE ALTO'],['cli-tote-2','TOTE BAJO'],
     ['cli-viejo-mundo','VIEJO MUNDO'],['cli-walter','WALTER'],['cli-wilson','WILSON'],
     ['cli-la-coopeh','LA COOPE H'],['cli-la-vuelta','LA VUELTA'],['cli-mica','MICA'],['cli-monica-san-ramon','MONICA SAN RAMON'],['cli-andrea-gorbea','ANDREA GORBEA']
   ].map(([id,name])=>({id,name,active:true}));
