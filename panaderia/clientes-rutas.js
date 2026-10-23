@@ -4,7 +4,17 @@
     {key:'FREIRE-PITRUFQUEN-TEMUCO',label:'FREIRE · PITRUFQUÉN · TEMUCO',order:['cli-jerry','cli-isabel-pitru','cli-andrea-gorbea','cli-tote','cli-tote-2','cli-viejo-mundo','cli-walter','cli-metrenco','cli-el-huerto-jaramillo','cli-monica-san-ramon','cli-david-choroico','cli-la-vuelta','cli-rustico','cli-wilson']},
     {key:'LAURELES - MELIPEUCO',label:'LAURELES · MELIPEUCO',order:['cli-maria-flores','cli-maria-flores-cunco','cli-mica','cli-sandra','cli-la-coope','cli-la-coopeh','cli-el-laurel','cli-la-estrella','cli-texia-melipeuco','cli-don-juan-melipeuco']}
   ];
-  const routeKey=c=>String(c?.route||c?.zone||'SIN RUTA').trim().toUpperCase();
+  const META={};
+  ROUTES.forEach(g=>g.order.forEach(id=>META[id]={route:g.key,label:g.label}));
+  const ALIAS={
+    'cli-tote':'TOTE ALTO',
+    'cli-tote-2':'TOTE BAJO'
+  };
+  const RUT_OVERRIDE={
+    'cli-la-coope':'77.324.403-0',
+    'cli-la-coopeh':'77.324.403-0'
+  };
+  const routeKey=c=>META[c?.id]?.route||String(c?.route||c?.zone||'SIN RUTA').trim().toUpperCase();
   const pos=c=>{
     const key=routeKey(c),gi=ROUTES.findIndex(g=>g.key===key);
     const oi=gi>=0?ROUTES[gi].order.indexOf(c.id):-1;
@@ -20,13 +30,14 @@
     if(!list.length){document.getElementById('clientsTable').innerHTML=typeof emptyRow==='function'?emptyRow(8,'Aún no hay clientes registrados'):'<tr><td colspan="8">Sin clientes</td></tr>';return}
     let last='';
     document.getElementById('clientsTable').innerHTML=list.map(c=>{
-      const key=routeKey(c),g=ROUTES.find(x=>x.key===key),label=g?.label||(c.route||c.zone||'SIN RUTA');
+      const key=routeKey(c),g=ROUTES.find(x=>x.key===key),label=g?.label||META[c.id]?.label||(c.route||c.zone||'SIN RUTA');
       const header=label!==last?`<tr class="client-route-row"><td colspan="8"><i class="bi bi-signpost-split"></i> <strong>${safe(label)}</strong></td></tr>`:'';
       last=label;
       const balance=typeof clientBalance==='function'?clientBalance(c.id):0;
       const trays=typeof clientTrayBalance==='function'?clientTrayBalance(c.id):0;
       const oven=typeof badge==='function'?(c.oven?badge('Operativo'):badge('Inactivo')):(c.oven?'Sí':'No');
-      return header+`<tr><td><strong>${safe(c.name)}</strong><div class="text-muted small">${safe(c.contact||'')}</div></td><td>${safe(c.rut||'-')}</td><td>${safe(c.commune||'-')}</td><td>${safe(c.route||c.zone||'-')}</td><td>${oven}</td><td class="${balance>0?'money-pending':'money-positive'}">${typeof money==='function'?money(balance):balance}</td><td>${trays}</td><td><button class="icon-btn" onclick="openClientDetail('${c.id}')"><i class="bi bi-eye"></i></button> <button class="icon-btn" onclick="editClient('${c.id}')"><i class="bi bi-pencil"></i></button></td></tr>`;
+      const displayName=ALIAS[c.id]||c.name||c.id;const displayRut=RUT_OVERRIDE[c.id]||c.rut||'-';const displayRoute=META[c.id]?.label||c.route||c.zone||'-';
+      return header+`<tr><td><strong>${safe(displayName)}</strong><div class="text-muted small">${safe(c.contact||'')}</div></td><td>${safe(displayRut)}</td><td>${safe(c.commune||'-')}</td><td>${safe(displayRoute)}</td><td>${oven}</td><td class="${balance>0?'money-pending':'money-positive'}">${typeof money==='function'?money(balance):balance}</td><td>${trays}</td><td><button class="icon-btn" onclick="openClientDetail('${c.id}')"><i class="bi bi-eye"></i></button> <button class="icon-btn" onclick="editClient('${c.id}')"><i class="bi bi-pencil"></i></button></td></tr>`;
     }).join('');
   }
   function install(){
