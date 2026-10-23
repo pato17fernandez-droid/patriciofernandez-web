@@ -22,7 +22,7 @@
     ['cli-metrenco','METRENCO'],['cli-mys','MyS'],['cli-rustico','RUSTICO'],['cli-san-pedro','SAN PEDRO'],
     ['cli-sandra','SANDRA'],['cli-texia-melipeuco','TEXIA MELIPEUCO'],['cli-tote','TOTE'],['cli-tote-2','TOTE2'],
     ['cli-viejo-mundo','VIEJO MUNDO'],['cli-walter','WALTER'],['cli-wilson','WILSON'],
-    ['cli-la-coopeh','LA COOPE H'],['cli-la-vuelta','LA VUELTA'],['cli-mica','MICA']
+    ['cli-la-coopeh','LA COOPE H'],['cli-la-vuelta','LA VUELTA'],['cli-mica','MICA'],['cli-monica-san-ramon','MONICA SAN RAMON'],['cli-andrea-gorbea','ANDREA GORBEA']
   ].map(([id,name])=>({id,name,active:true}));
 
   function availableClients(){
