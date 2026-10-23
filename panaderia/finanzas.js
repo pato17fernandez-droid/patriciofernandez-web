@@ -187,6 +187,143 @@
     try{await api({action:'openingBalance',account,amount});await load()}catch(e){alert(e.message)}
   }
 
+
+  function calcAccountAtPeriod(name,period){
+    const opening=Number(finance.accounts.find(a=>a.name===name)?.openingBalance||0);
+    return finance.movements.reduce((s,x)=>{
+      if(x.account!==name||String(x.period||'')>period)return s;
+      if(x.type==='Ingreso')return s+Number(x.amount||0);
+      if(x.type==='Egreso')return s-Number(x.amount||0);
+      if(x.type==='Transferencia')return s+(x.direction==='Entrada'?Number(x.amount||0):-Number(x.amount||0));
+      return s;
+    },opening);
+  }
+
+  function categoryMap(rows,type,affects=true){
+    const map={};
+    rows.filter(x=>x.type===type&&(affects===null||x.affectsFlow!==false===affects)).forEach(x=>{
+      const k=x.category||'Sin categoría';
+      map[k]=(map[k]||0)+Number(x.amount||0);
+    });
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  }
+
+  function reportBars(entries,total){
+    if(!entries.length)return '<p class="muted">Sin movimientos en esta categoría.</p>';
+    const max=Math.max(1,...entries.map(x=>x[1]));
+    return entries.map(([name,value])=>`
+      <div class="chart-row"><div class="chart-label"><span>${safe(name)}</span><strong>${moneyCL(value)}</strong></div>
+      <div class="bar-track"><i style="width:${Math.max(3,value/max*100)}%"></i></div>
+      <small>${total?((value/total)*100).toFixed(1):'0.0'}% del total</small></div>`).join('');
+  }
+
+  function dailyFlowSvg(rows){
+    const dayMap={};
+    rows.filter(x=>x.affectsFlow!==false&&(x.type==='Ingreso'||x.type==='Egreso')).forEach(x=>{
+      const d=x.date||'Sin fecha';
+      dayMap[d]=(dayMap[d]||0)+(x.type==='Ingreso'?Number(x.amount||0):-Number(x.amount||0));
+    });
+    const pts=Object.entries(dayMap).filter(([d])=>d!=='Sin fecha').sort((a,b)=>a[0].localeCompare(b[0]));
+    if(!pts.length)return '<p class="muted">Sin datos diarios para graficar.</p>';
+    let accum=0;
+    const values=pts.map(([d,v])=>[d,accum+=v]);
+    const min=Math.min(0,...values.map(x=>x[1])),max=Math.max(0,...values.map(x=>x[1]));
+    const range=Math.max(1,max-min),w=760,h=230,pad=34;
+    const xy=values.map((x,i)=>{
+      const px=pad+(values.length===1?(w-2*pad)/2:i*(w-2*pad)/(values.length-1));
+      const py=pad+(max-x[1])*(h-2*pad)/range;
+      return [px,py,x[0],x[1]];
+    });
+    const zeroY=pad+(max-0)*(h-2*pad)/range;
+    const poly=xy.map(x=>x[0].toFixed(1)+','+x[1].toFixed(1)).join(' ');
+    const labels=xy.filter((_,i)=>i===0||i===xy.length-1||i===Math.floor(xy.length/2)).map(x=>`
+      <text x="${x[0]}" y="${h-8}" text-anchor="middle" font-size="11" fill="#68707d">${x[2].slice(8,10)}/${x[2].slice(5,7)}</text>`).join('');
+    return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Evolución acumulada del flujo operacional">
+      <line x1="${pad}" y1="${zeroY}" x2="${w-pad}" y2="${zeroY}" stroke="#d8dde5" stroke-width="1"/>
+      <polyline points="${poly}" fill="none" stroke="#b7791f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      ${xy.map(x=>`<circle cx="${x[0]}" cy="${x[1]}" r="4" fill="#b7791f"><title>${x[2]}: ${moneyCL(x[3])}</title></circle>`).join('')}
+      ${labels}
+    </svg>`;
+  }
+
+  function generateFinanceReport(){
+    const period=currentPeriod();
+    const rows=(finance.movements||[]).filter(x=>x.period===period).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+    const opIncome=rows.filter(x=>x.type==='Ingreso'&&x.affectsFlow!==false);
+    const opExpense=rows.filter(x=>x.type==='Egreso'&&x.affectsFlow!==false);
+    const excluded=rows.filter(x=>(x.type==='Ingreso'||x.type==='Egreso')&&x.affectsFlow===false);
+    const inc=opIncome.reduce((s,x)=>s+Number(x.amount||0),0);
+    const out=opExpense.reduce((s,x)=>s+Number(x.amount||0),0);
+    const excludedIn=excluded.filter(x=>x.type==='Ingreso').reduce((s,x)=>s+Number(x.amount||0),0);
+    const excludedOut=excluded.filter(x=>x.type==='Egreso').reduce((s,x)=>s+Number(x.amount||0),0);
+    const net=inc-out;
+    const inCats=categoryMap(rows,'Ingreso',true);
+    const outCats=categoryMap(rows,'Egreso',true);
+    const caja=calcAccountAtPeriod('Caja Efectivo Panadería',period);
+    const banco=calcAccountAtPeriod('Banco Santander',period);
+    const transfers=rows.filter(x=>x.type==='Transferencia');
+    const transferAmount=transfers.filter(x=>x.direction==='Salida').reduce((s,x)=>s+Number(x.amount||0),0);
+    const generated=new Date().toLocaleString('es-CL');
+    const detailRows=rows.filter(x=>x.type!=='Transferencia'||x.direction==='Salida');
+
+    const w=window.open('','_blank');
+    if(!w){alert('El navegador bloqueó la ventana del informe. Habilita ventanas emergentes para esta página.');return;}
+    w.document.open();
+    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe Finanzas - ${safe(labelMonth(period))}</title>
+    <style>
+      *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#172033;margin:0;background:#eef1f5}.page{max-width:1120px;margin:24px auto;background:#fff;padding:38px;border-radius:18px}
+      h1{margin:0;font-size:30px}.sub{color:#667085;margin:6px 0 24px}.head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;border-bottom:3px solid #e5a900;padding-bottom:20px}
+      .brand{font-weight:800;font-size:18px}.actions{display:flex;gap:8px}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer}.print{background:#f5b800}.close{background:#eef1f5}
+      .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0}.kpi{border:1px solid #e4e7ec;border-radius:14px;padding:15px}.kpi span{display:block;color:#667085;font-size:12px}.kpi strong{display:block;font-size:22px;margin-top:5px}.good{color:#067647}.bad{color:#b42318}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{border:1px solid #e4e7ec;border-radius:14px;padding:18px;margin-bottom:16px;break-inside:avoid}.card h2{font-size:18px;margin:0 0 4px}.muted{color:#667085;font-size:12px}
+      .chart-row{margin:12px 0}.chart-label{display:flex;justify-content:space-between;gap:15px;font-size:13px}.bar-track{height:9px;background:#edf0f3;border-radius:20px;overflow:hidden;margin:5px 0}.bar-track i{display:block;height:100%;background:#d49a00;border-radius:20px}
+      svg{width:100%;height:auto;display:block}.accounts{display:grid;grid-template-columns:1fr 1fr;gap:12px}.account{background:#f8fafc;border-radius:12px;padding:15px}.account span{color:#667085;font-size:12px}.account strong{display:block;font-size:21px;margin-top:4px}
+      table{width:100%;border-collapse:collapse;font-size:11px}th,td{text-align:left;padding:8px;border-bottom:1px solid #e7eaf0;vertical-align:top}th{background:#f8fafc}.amount{text-align:right;white-space:nowrap}
+      .badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef2f6;font-size:10px}.note{background:#fff8e6;border-left:4px solid #e5a900;padding:10px 12px;margin-top:12px;font-size:12px}
+      footer{margin-top:24px;color:#98a2b3;font-size:10px;text-align:center}.section-title{margin:26px 0 10px;font-size:21px}
+      @media(max-width:760px){.page{margin:0;padding:18px;border-radius:0}.kpis,.grid,.accounts{grid-template-columns:1fr}.actions{position:sticky;top:8px}.head{display:block}.actions{margin-top:12px}}
+      @media print{body{background:#fff}.page{max-width:none;margin:0;padding:12mm;border-radius:0}.actions{display:none}.card{break-inside:avoid}.section-title{break-after:avoid}@page{size:A4;margin:9mm}}
+    </style></head><body><main class="page">
+      <div class="head"><div><div class="brand">NOVABAKE · Panadería</div><h1>Informe mensual de Finanzas</h1><p class="sub">${safe(labelMonth(period))} · Generado ${safe(generated)}</p></div>
+      <div class="actions"><button class="btn close" onclick="window.close()">Cerrar</button><button class="btn print" onclick="window.print()">Imprimir / Guardar PDF</button></div></div>
+
+      <div class="kpis">
+        <div class="kpi"><span>Ingresos operacionales</span><strong class="good">${moneyCL(inc)}</strong><small>${opIncome.length} movimientos</small></div>
+        <div class="kpi"><span>Egresos operacionales</span><strong class="bad">${moneyCL(out)}</strong><small>${opExpense.length} movimientos</small></div>
+        <div class="kpi"><span>Flujo neto operacional</span><strong class="${net>=0?'good':'bad'}">${moneyCL(net)}</strong><small>Ingresos menos egresos operacionales</small></div>
+        <div class="kpi"><span>Ingresos fuera del flujo</span><strong>${moneyCL(excludedIn)}</strong><small>No afectan el resultado operacional</small></div>
+        <div class="kpi"><span>Egresos fuera del flujo</span><strong>${moneyCL(excludedOut)}</strong><small>Igualmente afectan el saldo real</small></div>
+        <div class="kpi"><span>Transferencias internas</span><strong>${moneyCL(transferAmount)}</strong><small>No son ingreso ni egreso</small></div>
+      </div>
+
+      <div class="card"><h2>Posición de Caja y Banco al cierre del período</h2><p class="muted">Saldos reales considerando todos los movimientos registrados hasta ${safe(labelMonth(period))}.</p>
+        <div class="accounts"><div class="account"><span>Caja Efectivo Panadería</span><strong>${moneyCL(caja)}</strong></div><div class="account"><span>Banco Santander</span><strong>${moneyCL(banco)}</strong></div></div>
+      </div>
+
+      <div class="grid">
+        <div class="card"><h2>Distribución de egresos operacionales</h2><p class="muted">Principales categorías del mes.</p>${reportBars(outCats,out)}</div>
+        <div class="card"><h2>Distribución de ingresos operacionales</h2><p class="muted">Origen de los ingresos que sí participan del flujo.</p>${reportBars(inCats,inc)}</div>
+      </div>
+
+      <div class="card"><h2>Evolución del flujo operacional</h2><p class="muted">Acumulado diario de ingresos menos egresos operacionales dentro del mes.</p>${dailyFlowSvg(rows)}</div>
+
+      <h2 class="section-title">Movimientos fuera del flujo operacional</h2>
+      <div class="card"><p class="muted">Movimientos reales que afectan Caja o Banco, pero fueron marcados para no distorsionar el resultado operacional.</p>
+        ${excluded.length?`<table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Cuenta</th><th class="amount">Monto</th></tr></thead><tbody>${excluded.map(x=>`<tr><td>${dateCL(x.date)}</td><td>${safe(x.description)}</td><td>${safe(x.type)}</td><td>${safe(x.account)}</td><td class="amount">${moneyCL(x.amount)}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">No hubo movimientos excluidos en este período.</p>'}
+      </div>
+
+      <h2 class="section-title">Detalle de movimientos del mes</h2>
+      <div class="card"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Categoría</th><th>Cuenta</th><th class="amount">Monto</th><th>Condición</th></tr></thead>
+        <tbody>${detailRows.map(x=>`<tr><td>${dateCL(x.date)}</td><td>${safe(x.description||'Transferencia interna')}</td><td>${safe(x.type)}</td><td>${safe(x.category||'-')}</td><td>${safe(x.account)}</td><td class="amount">${moneyCL(x.amount)}</td><td><span class="badge">${x.type==='Transferencia'?'Interna':x.affectsFlow===false?'Fuera del flujo':'Operacional'}</span></td></tr>`).join('')||'<tr><td colspan="7">Sin movimientos en el período.</td></tr>'}
+      </table></div>
+
+      <div class="note"><strong>Lectura del informe:</strong> el flujo neto operacional es un indicador de gestión. Los movimientos marcados “Fuera del flujo” no se incorporan a ese resultado, pero sí modifican los saldos reales de Caja o Banco.</div>
+      <footer>Informe generado desde el Sistema de Gestión NOVABAKE · ${safe(labelMonth(period))}</footer>
+    </main></body></html>`);
+    w.document.close();
+    w.focus();
+  }
+
   function bind(){
     q('financeMonthFilter')?.addEventListener('change',e=>{localStorage.setItem('panaderiaFinanceMonth',e.target.value);render()});
     q('financeSearch')?.addEventListener('input',render);
@@ -195,6 +332,7 @@
     q('financeNewIncome')?.addEventListener('click',()=>openMovement('Ingreso'));
     q('financeNewExpense')?.addEventListener('click',()=>openMovement('Egreso'));
     q('financeTransfer')?.addEventListener('click',openTransfer);
+    q('financeReport')?.addEventListener('click',generateFinanceReport);
     q('financeForm')?.addEventListener('submit',submit);
     q('financeTable')?.addEventListener('click',e=>{
       const edit=e.target.closest('[data-fin-edit]'),del=e.target.closest('[data-fin-delete]');
@@ -206,5 +344,5 @@
   }
 
   window.addEventListener('DOMContentLoaded',()=>{bind();load()});
-  window.panaderiaFinanzas={load,render};
+  window.panaderiaFinanzas={load,render,generateReport:generateFinanceReport};
 })();
