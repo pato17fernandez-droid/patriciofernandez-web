@@ -261,7 +261,6 @@
     const outCats=categoryMap(rows,'Egreso',true);
     const caja=calcAccountAtPeriod('Caja Efectivo Panadería',period);
     const banco=calcAccountAtPeriod('Banco Santander',period);
-    const generated=new Date().toLocaleString('es-CL');
     const detailRows=rows.filter(x=>x.type!=='Transferencia'||x.direction==='Salida');
 
     const w=window.open('','_blank');
@@ -272,17 +271,17 @@
       *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#172033;margin:0;background:#eef1f5}.page{max-width:1120px;margin:24px auto;background:#fff;padding:38px;border-radius:18px}
       h1{margin:0;font-size:30px}.sub{color:#667085;margin:6px 0 24px}.head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;border-bottom:3px solid #e5a900;padding-bottom:20px}
       .brand{font-weight:800;font-size:18px}.actions{display:flex;gap:8px}.btn{border:0;border-radius:10px;padding:10px 15px;font-weight:700;cursor:pointer}.print{background:#f5b800}.close{background:#eef1f5}
-      .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0}.kpi{border:1px solid #e4e7ec;border-radius:14px;padding:15px}.kpi span{display:block;color:#667085;font-size:12px}.kpi strong{display:block;font-size:22px;margin-top:5px}.good{color:#067647}.bad{color:#b42318}
+      .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0 16px}.kpi{border:1px solid #e4e7ec;border-radius:14px;padding:20px 18px;min-height:104px;display:flex;flex-direction:column;justify-content:center}.kpi span{display:block;color:#667085;font-size:13px}.kpi strong{display:block;font-size:28px;margin-top:7px;line-height:1.05}.good{color:#067647}.bad{color:#b42318}
       .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{border:1px solid #e4e7ec;border-radius:14px;padding:18px;margin-bottom:16px;break-inside:avoid}.card h2{font-size:18px;margin:0 0 4px}.muted{color:#667085;font-size:12px}
       .chart-row{margin:12px 0}.chart-label{display:flex;justify-content:space-between;gap:15px;font-size:13px}.bar-track{height:9px;background:#edf0f3;border-radius:20px;overflow:hidden;margin:5px 0}.bar-track i{display:block;height:100%;background:#d49a00;border-radius:20px}
-      svg{width:100%;height:auto;display:block}.accounts{display:grid;grid-template-columns:1fr 1fr;gap:12px}.account{background:#f8fafc;border-radius:12px;padding:15px}.account span{color:#667085;font-size:12px}.account strong{display:block;font-size:21px;margin-top:4px}
+      svg{width:100%;height:auto;display:block}.accounts{display:grid;grid-template-columns:1fr 1fr;gap:14px}.account{background:#f8fafc;border-radius:12px;padding:18px}.account span{color:#667085;font-size:13px}.account strong{display:block;font-size:25px;margin-top:5px}
       table{width:100%;border-collapse:collapse;font-size:11px}th,td{text-align:left;padding:8px;border-bottom:1px solid #e7eaf0;vertical-align:top}th{background:#f8fafc}.amount{text-align:right;white-space:nowrap}
       .badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef2f6;font-size:10px}.note{background:#fff8e6;border-left:4px solid #e5a900;padding:10px 12px;margin-top:12px;font-size:12px}
       footer{margin-top:24px;color:#98a2b3;font-size:10px;text-align:center}.section-title{margin:26px 0 10px;font-size:21px}
       @media(max-width:760px){.page{margin:0;padding:18px;border-radius:0}.kpis,.grid,.accounts{grid-template-columns:1fr}.actions{position:sticky;top:8px}.head{display:block}.actions{margin-top:12px}}
-      @media print{@page{size:A4 portrait;margin:10mm 9mm 11mm}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:#fff;font-size:10pt}.page{max-width:none;margin:0;padding:0;border-radius:0}.actions{display:none!important}.head{padding-bottom:10px;margin-bottom:10px}h1{font-size:22pt}.sub{margin-bottom:8px}.kpis{grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0 12px}.kpi{padding:9px;border-radius:9px;break-inside:avoid}.kpi span{font-size:8pt}.kpi strong{font-size:14pt}.kpi small{font-size:7.5pt}.grid{gap:8px}.card{padding:10px;margin-bottom:9px;border-radius:9px;break-inside:avoid}.card h2{font-size:11.5pt}.muted{font-size:8pt}.accounts{gap:8px}.account{padding:9px}.account strong{font-size:13pt}.chart-row{margin:6px 0}.chart-label{font-size:8pt}.bar-track{height:6px}svg{max-height:145px}.section-title{font-size:13pt;margin:14px 0 7px;break-after:avoid-page}table{font-size:7.3pt}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}th,td{padding:4px 5px}.badge{font-size:6.8pt;padding:2px 5px}.note{font-size:8pt;padding:7px 9px;margin-top:8px;break-inside:avoid}.page-break{break-before:page;page-break-before:always}.detail-card{break-inside:auto}footer{font-size:7pt;margin-top:10px}}
+      @media print{@page{size:A4 portrait;margin:10mm 9mm 11mm}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:#fff;font-size:10pt}.page{max-width:none;margin:0;padding:0;border-radius:0}.actions{display:none!important}.head{padding-bottom:10px;margin-bottom:10px}h1{font-size:22pt}.sub{margin-bottom:8px}.kpis{grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 10px}.kpi{padding:12px 10px;border-radius:9px;break-inside:avoid;min-height:24mm}.kpi span{font-size:8.5pt}.kpi strong{font-size:17pt;line-height:1.05}.kpi small{font-size:7.5pt}.grid{gap:8px}.card{padding:10px;margin-bottom:9px;border-radius:9px;break-inside:avoid}.card h2{font-size:11.5pt}.muted{font-size:8pt}.accounts{gap:8px}.account{padding:11px}.account strong{font-size:15pt}.chart-row{margin:6px 0}.chart-label{font-size:8pt}.bar-track{height:6px}svg{max-height:145px}.section-title{font-size:13pt;margin:14px 0 7px;break-after:avoid-page}table{font-size:7.3pt}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}th,td{padding:4px 5px}.badge{font-size:6.8pt;padding:2px 5px}.note{font-size:8pt;padding:7px 9px;margin-top:8px;break-inside:avoid}.page-break{break-before:page;page-break-before:always}.detail-card{break-inside:auto}footer{font-size:7pt;margin-top:10px}}
     </style></head><body><main class="page">
-      <div class="head"><div><div class="brand">NOVABAKE · Panadería</div><h1>Informe financiero mensual</h1><p class="sub">${safe(labelMonth(period))} · Generado ${safe(generated)}</p></div>
+      <div class="head"><div><div class="brand">NOVABAKE · Panadería</div><h1>Informe financiero mensual</h1><p class="sub">${safe(labelMonth(period))}</p></div>
       <div class="actions"><button class="btn close" onclick="window.close()">Cerrar</button><button class="btn print" onclick="window.print()">Imprimir / Guardar PDF</button></div></div>
 
       <div class="kpis">
@@ -293,7 +292,7 @@
         <div class="kpi"><span>Otros egresos</span><strong>${moneyCL(excludedOut)}</strong></div>
       </div>
 
-      <div class="card"><h2>Caja y Banco al cierre del mes</h2>
+      <div class="card summary-accounts"><h2>Caja y Banco al cierre del mes</h2>
         <div class="accounts"><div class="account"><span>Caja Efectivo Panadería</span><strong>${moneyCL(caja)}</strong></div><div class="account"><span>Banco Santander</span><strong>${moneyCL(banco)}</strong></div></div>
       </div>
 
