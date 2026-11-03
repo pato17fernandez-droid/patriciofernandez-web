@@ -261,8 +261,6 @@
     const outCats=categoryMap(rows,'Egreso',true);
     const caja=calcAccountAtPeriod('Caja Efectivo Panadería',period);
     const banco=calcAccountAtPeriod('Banco Santander',period);
-    const transfers=rows.filter(x=>x.type==='Transferencia');
-    const transferAmount=transfers.filter(x=>x.direction==='Salida').reduce((s,x)=>s+Number(x.amount||0),0);
     const generated=new Date().toLocaleString('es-CL');
     const detailRows=rows.filter(x=>x.type!=='Transferencia'||x.direction==='Salida');
 
@@ -284,40 +282,38 @@
       @media(max-width:760px){.page{margin:0;padding:18px;border-radius:0}.kpis,.grid,.accounts{grid-template-columns:1fr}.actions{position:sticky;top:8px}.head{display:block}.actions{margin-top:12px}}
       @media print{@page{size:A4 portrait;margin:10mm 9mm 11mm}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:#fff;font-size:10pt}.page{max-width:none;margin:0;padding:0;border-radius:0}.actions{display:none!important}.head{padding-bottom:10px;margin-bottom:10px}h1{font-size:22pt}.sub{margin-bottom:8px}.kpis{grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0 12px}.kpi{padding:9px;border-radius:9px;break-inside:avoid}.kpi span{font-size:8pt}.kpi strong{font-size:14pt}.kpi small{font-size:7.5pt}.grid{gap:8px}.card{padding:10px;margin-bottom:9px;border-radius:9px;break-inside:avoid}.card h2{font-size:11.5pt}.muted{font-size:8pt}.accounts{gap:8px}.account{padding:9px}.account strong{font-size:13pt}.chart-row{margin:6px 0}.chart-label{font-size:8pt}.bar-track{height:6px}svg{max-height:145px}.section-title{font-size:13pt;margin:14px 0 7px;break-after:avoid-page}table{font-size:7.3pt}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}th,td{padding:4px 5px}.badge{font-size:6.8pt;padding:2px 5px}.note{font-size:8pt;padding:7px 9px;margin-top:8px;break-inside:avoid}.page-break{break-before:page;page-break-before:always}.detail-card{break-inside:auto}footer{font-size:7pt;margin-top:10px}}
     </style></head><body><main class="page">
-      <div class="head"><div><div class="brand">NOVABAKE · Panadería</div><h1>Informe mensual de Finanzas</h1><p class="sub">${safe(labelMonth(period))} · Generado ${safe(generated)}</p></div>
+      <div class="head"><div><div class="brand">NOVABAKE · Panadería</div><h1>Informe financiero mensual</h1><p class="sub">${safe(labelMonth(period))} · Generado ${safe(generated)}</p></div>
       <div class="actions"><button class="btn close" onclick="window.close()">Cerrar</button><button class="btn print" onclick="window.print()">Imprimir / Guardar PDF</button></div></div>
 
       <div class="kpis">
-        <div class="kpi"><span>Ingresos operacionales</span><strong class="good">${moneyCL(inc)}</strong><small>${opIncome.length} movimientos</small></div>
-        <div class="kpi"><span>Egresos operacionales</span><strong class="bad">${moneyCL(out)}</strong><small>${opExpense.length} movimientos</small></div>
-        <div class="kpi"><span>Flujo neto operacional</span><strong class="${net>=0?'good':'bad'}">${moneyCL(net)}</strong><small>Ingresos menos egresos operacionales</small></div>
-        <div class="kpi"><span>Ingresos fuera del flujo</span><strong>${moneyCL(excludedIn)}</strong><small>No afectan el resultado operacional</small></div>
-        <div class="kpi"><span>Egresos fuera del flujo</span><strong>${moneyCL(excludedOut)}</strong><small>Igualmente afectan el saldo real</small></div>
-        <div class="kpi"><span>Transferencias internas</span><strong>${moneyCL(transferAmount)}</strong><small>No son ingreso ni egreso</small></div>
+        <div class="kpi"><span>Ingresos operacionales</span><strong class="good">${moneyCL(inc)}</strong></div>
+        <div class="kpi"><span>Egresos operacionales</span><strong class="bad">${moneyCL(out)}</strong></div>
+        <div class="kpi"><span>Resultado operacional</span><strong class="${net>=0?'good':'bad'}">${moneyCL(net)}</strong></div>
+        <div class="kpi"><span>Otros ingresos</span><strong>${moneyCL(excludedIn)}</strong></div>
+        <div class="kpi"><span>Otros egresos</span><strong>${moneyCL(excludedOut)}</strong></div>
       </div>
 
-      <div class="card"><h2>Posición de Caja y Banco al cierre del período</h2><p class="muted">Saldos reales considerando todos los movimientos registrados hasta ${safe(labelMonth(period))}.</p>
+      <div class="card"><h2>Caja y Banco al cierre del mes</h2>
         <div class="accounts"><div class="account"><span>Caja Efectivo Panadería</span><strong>${moneyCL(caja)}</strong></div><div class="account"><span>Banco Santander</span><strong>${moneyCL(banco)}</strong></div></div>
       </div>
 
       <div class="grid">
-        <div class="card"><h2>Distribución de egresos operacionales</h2><p class="muted">Principales categorías del mes.</p>${reportBars(outCats,out)}</div>
-        <div class="card"><h2>Distribución de ingresos operacionales</h2><p class="muted">Origen de los ingresos que sí participan del flujo.</p>${reportBars(inCats,inc)}</div>
+        <div class="card"><h2>Distribución de egresos</h2><p class="muted"></p>${reportBars(outCats,out)}</div>
+        <div class="card"><h2>Distribución de ingresos</h2><p class="muted"></p>${reportBars(inCats,inc)}</div>
       </div>
 
-      <div class="card"><h2>Evolución del flujo operacional</h2><p class="muted">Acumulado diario de ingresos menos egresos operacionales dentro del mes.</p>${dailyFlowSvg(rows)}</div>
+      <div class="card"><h2>Evolución del resultado mensual</h2><p class="muted"></p>${dailyFlowSvg(rows)}</div>
 
-      <h2 class="section-title">Movimientos fuera del flujo operacional</h2>
-      <div class="card"><p class="muted">Movimientos reales que afectan Caja o Banco, pero fueron marcados para no distorsionar el resultado operacional.</p>
+      <h2 class="section-title">Otros movimientos</h2>
+      <div class="card"><p class="muted">Movimientos registrados fuera del resultado operacional.</p>
         ${excluded.length?`<table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Cuenta</th><th class="amount">Monto</th></tr></thead><tbody>${excluded.map(x=>`<tr><td>${dateCL(x.date)}</td><td>${safe(x.description)}</td><td>${safe(x.type)}</td><td>${safe(x.account)}</td><td class="amount">${moneyCL(x.amount)}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">No hubo movimientos excluidos en este período.</p>'}
       </div>
 
-      <h2 class="section-title page-break">Detalle de movimientos del mes</h2>
+      <h2 class="section-title page-break">Detalle del mes</h2>
       <div class="card detail-card"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Categoría</th><th>Cuenta</th><th class="amount">Monto</th><th>Condición</th></tr></thead>
         <tbody>${detailRows.map(x=>`<tr><td>${dateCL(x.date)}</td><td>${safe(x.description||'Transferencia interna')}</td><td>${safe(x.type)}</td><td>${safe(x.category||'-')}</td><td>${safe(x.account)}</td><td class="amount">${moneyCL(x.amount)}</td><td><span class="badge">${x.type==='Transferencia'?'Interna':x.affectsFlow===false?'Fuera del flujo':'Operacional'}</span></td></tr>`).join('')||'<tr><td colspan="7">Sin movimientos en el período.</td></tr>'}
       </table></div>
 
-      <div class="note"><strong>Lectura del informe:</strong> el flujo neto operacional es un indicador de gestión. Los movimientos marcados “Fuera del flujo” no se incorporan a ese resultado, pero sí modifican los saldos reales de Caja o Banco.</div>
       <footer>Informe generado desde el Sistema de Gestión NOVABAKE · ${safe(labelMonth(period))}</footer>
     </main></body></html>`);
     w.document.close();
