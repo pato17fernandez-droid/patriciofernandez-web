@@ -282,7 +282,7 @@
       .badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef2f6;font-size:10px}.note{background:#fff8e6;border-left:4px solid #e5a900;padding:10px 12px;margin-top:12px;font-size:12px}
       footer{margin-top:24px;color:#98a2b3;font-size:10px;text-align:center}.section-title{margin:26px 0 10px;font-size:21px}
       @media(max-width:760px){.page{margin:0;padding:18px;border-radius:0}.kpis,.grid,.accounts{grid-template-columns:1fr}.actions{position:sticky;top:8px}.head{display:block}.actions{margin-top:12px}}
-      @media print{body{background:#fff}.page{max-width:none;margin:0;padding:12mm;border-radius:0}.actions{display:none}.card{break-inside:avoid}.section-title{break-after:avoid}@page{size:A4;margin:9mm}}
+      @media print{@page{size:A4 portrait;margin:10mm 9mm 11mm}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:#fff;font-size:10pt}.page{max-width:none;margin:0;padding:0;border-radius:0}.actions{display:none!important}.head{padding-bottom:10px;margin-bottom:10px}h1{font-size:22pt}.sub{margin-bottom:8px}.kpis{grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0 12px}.kpi{padding:9px;border-radius:9px;break-inside:avoid}.kpi span{font-size:8pt}.kpi strong{font-size:14pt}.kpi small{font-size:7.5pt}.grid{gap:8px}.card{padding:10px;margin-bottom:9px;border-radius:9px;break-inside:avoid}.card h2{font-size:11.5pt}.muted{font-size:8pt}.accounts{gap:8px}.account{padding:9px}.account strong{font-size:13pt}.chart-row{margin:6px 0}.chart-label{font-size:8pt}.bar-track{height:6px}svg{max-height:145px}.section-title{font-size:13pt;margin:14px 0 7px;break-after:avoid-page}table{font-size:7.3pt}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}th,td{padding:4px 5px}.badge{font-size:6.8pt;padding:2px 5px}.note{font-size:8pt;padding:7px 9px;margin-top:8px;break-inside:avoid}.page-break{break-before:page;page-break-before:always}.detail-card{break-inside:auto}footer{font-size:7pt;margin-top:10px}}
     </style></head><body><main class="page">
       <div class="head"><div><div class="brand">NOVABAKE · Panadería</div><h1>Informe mensual de Finanzas</h1><p class="sub">${safe(labelMonth(period))} · Generado ${safe(generated)}</p></div>
       <div class="actions"><button class="btn close" onclick="window.close()">Cerrar</button><button class="btn print" onclick="window.print()">Imprimir / Guardar PDF</button></div></div>
@@ -312,8 +312,8 @@
         ${excluded.length?`<table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Cuenta</th><th class="amount">Monto</th></tr></thead><tbody>${excluded.map(x=>`<tr><td>${dateCL(x.date)}</td><td>${safe(x.description)}</td><td>${safe(x.type)}</td><td>${safe(x.account)}</td><td class="amount">${moneyCL(x.amount)}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">No hubo movimientos excluidos en este período.</p>'}
       </div>
 
-      <h2 class="section-title">Detalle de movimientos del mes</h2>
-      <div class="card"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Categoría</th><th>Cuenta</th><th class="amount">Monto</th><th>Condición</th></tr></thead>
+      <h2 class="section-title page-break">Detalle de movimientos del mes</h2>
+      <div class="card detail-card"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Categoría</th><th>Cuenta</th><th class="amount">Monto</th><th>Condición</th></tr></thead>
         <tbody>${detailRows.map(x=>`<tr><td>${dateCL(x.date)}</td><td>${safe(x.description||'Transferencia interna')}</td><td>${safe(x.type)}</td><td>${safe(x.category||'-')}</td><td>${safe(x.account)}</td><td class="amount">${moneyCL(x.amount)}</td><td><span class="badge">${x.type==='Transferencia'?'Interna':x.affectsFlow===false?'Fuera del flujo':'Operacional'}</span></td></tr>`).join('')||'<tr><td colspan="7">Sin movimientos en el período.</td></tr>'}
       </table></div>
 
