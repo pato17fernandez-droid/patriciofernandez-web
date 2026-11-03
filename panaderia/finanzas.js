@@ -16,12 +16,13 @@
     return data;
   }
 
+  function systemMonth(){return new Date().toISOString().slice(0,7)}
   function periods(){
     const vals=finance.movements.map(x=>x.period).filter(Boolean);
-    vals.push(new Date().toISOString().slice(0,7));
+    vals.push(systemMonth());
     return [...new Set(vals)].sort().reverse();
   }
-  function currentPeriod(){return q('financeMonthFilter')?.value||localStorage.getItem('panaderiaFinanceMonth')||'2026-10'}
+  function currentPeriod(){return q('financeMonthFilter')?.value||localStorage.getItem('panaderiaFinanceMonth')||systemMonth()}
   function labelMonth(ym){const [y,m]=ym.split('-').map(Number);return new Date(y,m-1,1).toLocaleDateString('es-CL',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase())}
 
   function calcAccount(name){
@@ -46,8 +47,8 @@
       <div class="fin-kpi"><span>Ingresos operacionales · ${safe(labelMonth(currentPeriod()))}</span><strong class="money-positive">${moneyCL(inc)}</strong><small>${excludedIn?moneyCL(excludedIn)+' fuera del flujo neto':rows.filter(x=>x.type==='Ingreso'&&x.affectsFlow!==false).length+' movimientos'}</small></div>
       <div class="fin-kpi"><span>Egresos operacionales · ${safe(labelMonth(currentPeriod()))}</span><strong class="money-pending">${moneyCL(operatingOut)}</strong><small>${excludedOut?moneyCL(excludedOut)+' fuera del flujo neto':'Sin egresos excluidos'}</small></div>
       <div class="fin-kpi"><span>Flujo neto operacional</span><strong class="${net>=0?'money-positive':'money-pending'}">${moneyCL(net)}</strong><small>No descuenta cheques/gastos marcados como automáticos</small></div>
-      <div class="fin-kpi account"><span><i class="bi bi-cash-stack"></i> Caja Efectivo</span><strong>${moneyCL(calcAccount('Caja Efectivo Panadería'))}</strong><small>Saldo real: incluye todos los movimientos</small></div>
-      <div class="fin-kpi account"><span><i class="bi bi-bank"></i> Banco Santander</span><strong>${moneyCL(calcAccount('Banco Santander'))}</strong><small>Saldo real: incluye cheques y gastos automáticos</small></div>`;
+      <div class="fin-kpi account"><span><i class="bi bi-cash-stack"></i> Caja Efectivo</span><strong>${moneyCL(calcAccountAtPeriod('Caja Efectivo Panadería',currentPeriod()))}</strong><small>Saldo real: incluye todos los movimientos</small></div>
+      <div class="fin-kpi account"><span><i class="bi bi-bank"></i> Banco Santander</span><strong>${moneyCL(calcAccountAtPeriod('Banco Santander',currentPeriod()))}</strong><small>Saldo real: incluye cheques y gastos automáticos</small></div>`;
   }
 
   function filteredRows(){
@@ -90,14 +91,37 @@
     }).join('')||'<tr><td colspan="8" class="empty-state">No hay movimientos para los filtros seleccionados.</td></tr>';
   }
 
+  function renderMonthTabs(){
+    const sel=q('financeMonthFilter');if(!sel)return;
+    let box=q('financeMonthTabs');
+    if(!box){
+      box=document.createElement('div');
+      box.id='financeMonthTabs';
+      box.className='fin-month-tabs';
+      const toolbar=sel.closest('.section-toolbar');
+      if(toolbar)toolbar.parentNode.insertBefore(box,toolbar.nextSibling);
+      else sel.parentNode?.insertBefore(box,sel);
+    }
+    const active=currentPeriod();
+    box.innerHTML=periods().slice().reverse().map(p=>`<button type="button" class="fin-month-tab ${p===active?'active':''}" data-fin-month="${p}">${safe(labelMonth(p))}</button>`).join('');
+    box.querySelectorAll('[data-fin-month]').forEach(btn=>btn.addEventListener('click',()=>{
+      sel.value=btn.dataset.finMonth;
+      localStorage.setItem('panaderiaFinanceMonth',btn.dataset.finMonth);
+      render();
+    }));
+  }
+
   function render(){
     const sel=q('financeMonthFilter');
     if(sel){
-      const chosen=sel.value||localStorage.getItem('panaderiaFinanceMonth')||'2026-10';
-      sel.innerHTML=periods().map(p=>`<option value="${p}" ${p===chosen?'selected':''}>${safe(labelMonth(p))}</option>`).join('');
-      if(!sel.value)sel.value=periods()[0]||'2026-10';
+      const all=periods(),saved=localStorage.getItem('panaderiaFinanceMonth');
+      let chosen=sel.value||saved||systemMonth();
+      if(saved&&saved<systemMonth()&&!finance.movements.some(x=>x.period===systemMonth()))chosen=systemMonth();
+      sel.innerHTML=all.map(p=>`<option value="${p}" ${p===chosen?'selected':''}>${safe(labelMonth(p))}</option>`).join('');
+      if(all.includes(chosen))sel.value=chosen;else sel.value=all[0]||systemMonth();
       localStorage.setItem('panaderiaFinanceMonth',sel.value);
     }
+    renderMonthTabs();
     const rows=filteredRows();
     renderStats(rows);renderCategories(rows);renderTable(rows);
     const count=q('financeCount');if(count)count.textContent=`${rows.length} movimientos`;
@@ -116,7 +140,7 @@
   }
   function openMovement(type='Egreso',id=null){
     editing=id?finance.movements.find(x=>x.id===id):null;
-    const x=editing||{type,date:new Date().toISOString().slice(0,10),period:currentPeriod(),account:'Banco Santander',method:'Transferencia',category:type==='Ingreso'?'Pago de clientes':'Insumos producción'};
+    const x=editing||{type,date:(currentPeriod()===systemMonth()?new Date().toISOString().slice(0,10):currentPeriod()+'-01'),period:currentPeriod(),account:'Banco Santander',method:'Transferencia',category:type==='Ingreso'?'Pago de clientes':'Insumos producción'};
     q('financeModalTitle').textContent=id?'Editar movimiento':type==='Ingreso'?'Registrar ingreso':'Registrar egreso';
     q('financeModalBody').innerHTML=`
       <div class="form-grid">
@@ -148,7 +172,7 @@
     q('financeModalTitle').textContent='Transferir entre cuentas';
     q('financeModalBody').innerHTML=`
       <div class="form-grid">
-        <div><label class="form-label">Fecha</label><input name="date" type="date" class="form-control" value="${new Date().toISOString().slice(0,10)}" required></div>
+        <div><label class="form-label">Fecha</label><input name="date" type="date" class="form-control" value="${currentPeriod()===systemMonth()?new Date().toISOString().slice(0,10):currentPeriod()+'-01'}" required></div>
         <div><label class="form-label">Monto</label><input name="amount" type="number" min="1" step="1" class="form-control" required></div>
         <div><label class="form-label">Desde</label><select name="from" class="form-select"><option>Banco Santander</option><option>Caja Efectivo Panadería</option></select></div>
         <div><label class="form-label">Hacia</label><select name="to" class="form-select"><option>Caja Efectivo Panadería</option><option>Banco Santander</option></select></div>
