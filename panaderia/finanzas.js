@@ -223,6 +223,33 @@
     },opening);
   }
 
+  function calcAccountAtDate(name,date){
+    const opening=Number(finance.accounts.find(a=>a.name===name)?.openingBalance||0);
+    return finance.movements.reduce((s,x)=>{
+      if(x.account!==name||String(x.date||'')>date)return s;
+      if(x.type==='Ingreso')return s+Number(x.amount||0);
+      if(x.type==='Egreso')return s-Number(x.amount||0);
+      if(x.type==='Transferencia')return s+(x.direction==='Entrada'?Number(x.amount||0):-Number(x.amount||0));
+      return s;
+    },opening);
+  }
+
+  function weekRange(base=new Date()){
+    const d=new Date(base.getFullYear(),base.getMonth(),base.getDate());
+    const day=d.getDay();
+    const diff=day===0?-6:1-day;
+    const start=new Date(d);start.setDate(d.getDate()+diff);
+    const end=new Date(start);end.setDate(start.getDate()+5);
+    if(d<end)end.setTime(d.getTime());
+    const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+    return {start:iso(start),end:iso(end)};
+  }
+
+  function rangeLabel(start,end){
+    const f=x=>{const [y,m,d]=x.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'})};
+    return f(start)+' al '+f(end);
+  }
+
   function categoryMap(rows,type,affects=true){
     const map={};
     rows.filter(x=>x.type===type&&(affects===null||x.affectsFlow!==false===affects)).forEach(x=>{
@@ -270,9 +297,11 @@
     </svg>`;
   }
 
-  function generateFinanceReport(){
+  function generateFinanceReport(mode='monthly'){
     const period=currentPeriod();
-    const rows=(finance.movements||[]).filter(x=>x.period===period).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+    const weekly=mode==='weekly';
+    const range=weekly?weekRange():null;
+    const rows=(finance.movements||[]).filter(x=>weekly?(String(x.date||'')>=range.start&&String(x.date||'')<=range.end):x.period===period).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
     const opIncome=rows.filter(x=>x.type==='Ingreso'&&x.affectsFlow!==false);
     const opExpense=rows.filter(x=>x.type==='Egreso'&&x.affectsFlow!==false);
     const excluded=rows.filter(x=>(x.type==='Ingreso'||x.type==='Egreso')&&x.affectsFlow===false);
@@ -283,14 +312,18 @@
     const net=inc-out;
     const inCats=categoryMap(rows,'Ingreso',true);
     const outCats=categoryMap(rows,'Egreso',true);
-    const caja=calcAccountAtPeriod('Caja Efectivo Panadería',period);
-    const banco=calcAccountAtPeriod('Banco Santander',period);
+    const caja=weekly?calcAccountAtDate('Caja Efectivo Panadería',range.end):calcAccountAtPeriod('Caja Efectivo Panadería',period);
+    const banco=weekly?calcAccountAtDate('Banco Santander',range.end):calcAccountAtPeriod('Banco Santander',period);
+    const reportTitle=weekly?'Informe financiero semanal':'Informe financiero mensual';
+    const reportPeriod=weekly?rangeLabel(range.start,range.end):labelMonth(period);
+    const detailTitle=weekly?'Detalle de la semana':'Detalle del mes';
+    const evolutionTitle=weekly?'Evolución del resultado semanal':'Evolución del resultado mensual';
     const detailRows=rows.filter(x=>x.type!=='Transferencia'||x.direction==='Salida');
 
     const w=window.open('','_blank');
     if(!w){alert('El navegador bloqueó la ventana del informe. Habilita ventanas emergentes para esta página.');return;}
     w.document.open();
-    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe Finanzas - ${safe(labelMonth(period))}</title>
+    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe Finanzas - ${safe(reportPeriod)}</title>
     <style>
       *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#172033;margin:0;background:#eef1f5}.page{max-width:1120px;margin:24px auto;background:#fff;padding:38px;border-radius:18px}
       h1{margin:0;font-size:30px}.sub{color:#667085;margin:6px 0 24px}.head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;border-bottom:3px solid #e5a900;padding-bottom:20px}
@@ -305,7 +338,7 @@
       @media(max-width:760px){.page{margin:0;padding:18px;border-radius:0}.kpis,.grid,.accounts{grid-template-columns:1fr}.actions{position:sticky;top:8px}.head{display:block}.actions{margin-top:12px}}
       @media print{@page{size:A4 portrait;margin:10mm 9mm 11mm}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:#fff;font-size:10pt}.page{max-width:none;margin:0;padding:0;border-radius:0}.actions{display:none!important}.head{padding-bottom:10px;margin-bottom:10px}h1{font-size:22pt}.sub{margin-bottom:8px}.kpis{grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 10px}.kpi{padding:12px 10px;border-radius:9px;break-inside:avoid;min-height:24mm}.kpi span{font-size:8.5pt}.kpi strong{font-size:17pt;line-height:1.05}.kpi small{font-size:7.5pt}.grid{gap:8px}.card{padding:10px;margin-bottom:9px;border-radius:9px;break-inside:avoid}.card h2{font-size:11.5pt}.muted{font-size:8pt}.accounts{gap:8px}.account{padding:11px}.account strong{font-size:15pt}.chart-row{margin:6px 0}.chart-label{font-size:8pt}.bar-track{height:6px}svg{max-height:145px}.section-title{font-size:13pt;margin:14px 0 7px;break-after:avoid-page}table{font-size:7.3pt}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}th,td{padding:4px 5px}.badge{font-size:6.8pt;padding:2px 5px}.note{font-size:8pt;padding:7px 9px;margin-top:8px;break-inside:avoid}.page-break{break-before:page;page-break-before:always}.detail-card{break-inside:auto}footer{font-size:7pt;margin-top:10px}}
     </style></head><body><main class="page">
-      <div class="head"><div><div class="brand">NOVABAKE · Panadería</div><h1>Informe financiero mensual</h1><p class="sub">${safe(labelMonth(period))}</p></div>
+      <div class="head"><div><div class="brand">NOVABAKE · Panadería</div><h1>${safe(reportTitle)}</h1><p class="sub">${safe(reportPeriod)}</p></div>
       <div class="actions"><button class="btn close" onclick="window.close()">Cerrar</button><button class="btn print" onclick="window.print()">Imprimir / Guardar PDF</button></div></div>
 
       <div class="kpis">
@@ -325,19 +358,19 @@
         <div class="card"><h2>Distribución de ingresos</h2><p class="muted"></p>${reportBars(inCats,inc)}</div>
       </div>
 
-      <div class="card"><h2>Evolución del resultado mensual</h2><p class="muted"></p>${dailyFlowSvg(rows)}</div>
+      <div class="card"><h2>${safe(evolutionTitle)}</h2><p class="muted"></p>${dailyFlowSvg(rows)}</div>
 
       <h2 class="section-title">Otros movimientos</h2>
       <div class="card"><p class="muted">Movimientos registrados fuera del resultado operacional.</p>
         ${excluded.length?`<table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Cuenta</th><th class="amount">Monto</th></tr></thead><tbody>${excluded.map(x=>`<tr><td>${dateCL(x.date)}</td><td>${safe(x.description)}</td><td>${safe(x.type)}</td><td>${safe(x.account)}</td><td class="amount">${moneyCL(x.amount)}</td></tr>`).join('')}</tbody></table>`:'<p class="muted">No hubo movimientos excluidos en este período.</p>'}
       </div>
 
-      <h2 class="section-title page-break">Detalle del mes</h2>
+      <h2 class="section-title page-break">${safe(detailTitle)}</h2>
       <div class="card detail-card"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Categoría</th><th>Cuenta</th><th class="amount">Monto</th><th>Condición</th></tr></thead>
         <tbody>${detailRows.map(x=>`<tr><td>${dateCL(x.date)}</td><td>${safe(x.description||'Transferencia interna')}</td><td>${safe(x.type)}</td><td>${safe(x.category||'-')}</td><td>${safe(x.account)}</td><td class="amount">${moneyCL(x.amount)}</td><td><span class="badge">${x.type==='Transferencia'?'Interna':x.affectsFlow===false?'Fuera del flujo':'Operacional'}</span></td></tr>`).join('')||'<tr><td colspan="7">Sin movimientos en el período.</td></tr>'}
       </table></div>
 
-      <footer>Informe generado desde el Sistema de Gestión NOVABAKE · ${safe(labelMonth(period))}</footer>
+      <footer>Informe generado desde el Sistema de Gestión NOVABAKE · ${safe(reportPeriod)}</footer>
     </main></body></html>`);
     w.document.close();
     w.focus();
@@ -351,7 +384,8 @@
     q('financeNewIncome')?.addEventListener('click',()=>openMovement('Ingreso'));
     q('financeNewExpense')?.addEventListener('click',()=>openMovement('Egreso'));
     q('financeTransfer')?.addEventListener('click',openTransfer);
-    q('financeReport')?.addEventListener('click',generateFinanceReport);
+    q('financeReport')?.addEventListener('click',()=>generateFinanceReport('monthly'));
+    q('financeWeeklyReport')?.addEventListener('click',()=>generateFinanceReport('weekly'));
     q('financeForm')?.addEventListener('submit',submit);
     q('financeTable')?.addEventListener('click',e=>{
       const edit=e.target.closest('[data-fin-edit]'),del=e.target.closest('[data-fin-delete]');
