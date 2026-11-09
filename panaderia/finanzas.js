@@ -122,6 +122,7 @@
       localStorage.setItem('panaderiaFinanceMonth',sel.value);
     }
     renderMonthTabs();
+    renderWeekFilter();
     const rows=filteredRows();
     renderStats(rows);renderCategories(rows);renderTable(rows);
     const count=q('financeCount');if(count)count.textContent=`${rows.length} movimientos`;
@@ -235,14 +236,47 @@
   }
 
   function weekRange(base=new Date()){
-    const d=new Date(base.getFullYear(),base.getMonth(),base.getDate());
+    const d=base instanceof Date?new Date(base.getFullYear(),base.getMonth(),base.getDate()):new Date(String(base)+'T12:00:00');
     const day=d.getDay();
     const diff=day===0?-6:1-day;
     const start=new Date(d);start.setDate(d.getDate()+diff);
     const end=new Date(start);end.setDate(start.getDate()+5);
-    if(d<end)end.setTime(d.getTime());
+    const today=new Date();today.setHours(0,0,0,0);
+    if(end>today)end.setTime(today.getTime());
     const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
     return {start:iso(start),end:iso(end)};
+  }
+
+  function financeWeeks(){
+    const seen=new Map();
+    (finance.movements||[]).forEach(x=>{
+      if(!x.date)return;
+      const r=weekRange(x.date);
+      const key=r.start+'|'+r.end;
+      if(!seen.has(key))seen.set(key,r);
+    });
+    const current=weekRange(new Date());
+    const currentHas=(finance.movements||[]).some(x=>String(x.date||'')>=current.start&&String(x.date||'')<=current.end);
+    if(currentHas)seen.set(current.start+'|'+current.end,current);
+    return [...seen.values()].sort((a,b)=>String(b.start).localeCompare(String(a.start)));
+  }
+
+  function selectedWeekRange(){
+    const sel=q('financeWeekFilter');
+    if(sel?.value){
+      const [start,end]=sel.value.split('|');
+      if(start&&end)return {start,end};
+    }
+    return financeWeeks()[0]||weekRange(new Date());
+  }
+
+  function renderWeekFilter(){
+    const sel=q('financeWeekFilter');if(!sel)return;
+    const weeks=financeWeeks();
+    const previous=sel.value;
+    sel.innerHTML=weeks.map(w=>`<option value="${w.start}|${w.end}">${safe(rangeLabel(w.start,w.end))}</option>`).join('');
+    if(previous&&weeks.some(w=>w.start+'|'+w.end===previous))sel.value=previous;
+    else if(weeks[0])sel.value=weeks[0].start+'|'+weeks[0].end;
   }
 
   function rangeLabel(start,end){
@@ -300,7 +334,7 @@
   function generateFinanceReport(mode='monthly'){
     const period=currentPeriod();
     const weekly=mode==='weekly';
-    const range=weekly?weekRange():null;
+    const range=weekly?selectedWeekRange():null;
     const rows=(finance.movements||[]).filter(x=>weekly?(String(x.date||'')>=range.start&&String(x.date||'')<=range.end):x.period===period).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
     const opIncome=rows.filter(x=>x.type==='Ingreso'&&x.affectsFlow!==false);
     const opExpense=rows.filter(x=>x.type==='Egreso'&&x.affectsFlow!==false);
@@ -386,6 +420,7 @@
     q('financeTransfer')?.addEventListener('click',openTransfer);
     q('financeReport')?.addEventListener('click',()=>generateFinanceReport('monthly'));
     q('financeWeeklyReport')?.addEventListener('click',()=>generateFinanceReport('weekly'));
+    q('financeWeekFilter')?.addEventListener('change',()=>{});
     q('financeForm')?.addEventListener('submit',submit);
     q('financeTable')?.addEventListener('click',e=>{
       const edit=e.target.closest('[data-fin-edit]'),del=e.target.closest('[data-fin-delete]');
