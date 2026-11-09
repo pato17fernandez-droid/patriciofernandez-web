@@ -238,9 +238,9 @@
   function weekRange(base=new Date()){
     const d=base instanceof Date?new Date(base.getFullYear(),base.getMonth(),base.getDate()):new Date(String(base)+'T12:00:00');
     const day=d.getDay();
-    const diff=day===0?-6:1-day;
+    const diff=-day;
     const start=new Date(d);start.setDate(d.getDate()+diff);
-    const end=new Date(start);end.setDate(start.getDate()+5);
+    const end=new Date(start);end.setDate(start.getDate()+6);
     const today=new Date();today.setHours(0,0,0,0);
     if(end>today)end.setTime(today.getTime());
     const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
@@ -255,6 +255,8 @@
       const key=r.start+'|'+r.end;
       if(!seen.has(key))seen.set(key,r);
     });
+    const closedPrev={start:'2026-11-02',end:'2026-11-07'};
+    seen.set(closedPrev.start+'|'+closedPrev.end,closedPrev);
     const current=weekRange(new Date());
     const currentHas=(finance.movements||[]).some(x=>String(x.date||'')>=current.start&&String(x.date||'')<=current.end);
     if(currentHas)seen.set(current.start+'|'+current.end,current);
